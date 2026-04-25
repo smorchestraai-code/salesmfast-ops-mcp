@@ -67,7 +67,18 @@ export function createCalendarsReader(
     description: CALENDARS_READER_DESCRIPTION,
     inputSchema,
     handler: async (input: unknown) => {
-      // 1. Schema validation (AC-4.1, AC-4.2, AC-8.1)
+      // 1. Manifest lookup FIRST (AC-4.3, AC-8.3) — runs before schema
+      //    validation so a typo'd operation gets a helpful "Valid operations:
+      //    list-groups, list, get, ..." error instead of a generic schema
+      //    "must be equal to constant" rejection from the oneOf discriminator.
+      const select = (input as SelectInput)?.selectSchema;
+      const operation = select?.operation;
+      if (typeof operation === "string" && !(operation in ops)) {
+        throw methodNotFound(operation, validOps);
+      }
+
+      // 2. Schema validation (AC-4.1, AC-4.2, AC-8.1) — catches missing
+      //    operation, bad params shape, additionalProperties, etc.
       if (!validate(input)) {
         const err =
           (validate.errors?.[0] as ErrorObject | undefined) ?? undefined;
@@ -82,17 +93,12 @@ export function createCalendarsReader(
         throw invalidParams(detail, path);
       }
 
-      const select = (input as SelectInput).selectSchema;
-      const operation = select?.operation;
+      // 3. Re-resolve after validation (operation is guaranteed valid here)
       const params = select?.params ?? {};
-
-      // 2. Manifest lookup (AC-4.3, AC-8.3)
-      if (!operation || !(operation in ops)) {
-        throw methodNotFound(operation ?? "(missing)", validOps);
-      }
-      const opSpec = ops[operation];
+      const opSpec = operation ? ops[operation] : undefined;
       if (!opSpec) {
-        throw methodNotFound(operation, validOps);
+        // Defensive — should be unreachable post-validation
+        throw methodNotFound(operation ?? "(missing)", validOps);
       }
 
       // 3. Dispatch to upstream (AC-2.3) with error mapping (AC-8.2)
