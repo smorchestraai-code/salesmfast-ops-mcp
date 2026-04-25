@@ -1,0 +1,35 @@
+{
+  "name": "salesmfast-ops-mcp",
+  "version": "0.1.0",
+  "description": "Facade-router MCP server: GoHighLevel 280-tool surface exposed as 13 category-level routers.",
+  "type": "module",
+  "main": "dist/server.js",
+  "bin": {
+    "salesmfast-ops": "dist/server.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "start": "node dist/server.js",
+    "probe": "tsx scripts/probe.ts",
+    "docs:mapping": "tsx scripts/gen-mapping-doc.ts",
+    "lint": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "ajv": "^8.12.0",
+    "dotenv": "^16.5.0",
+    "ghl-mcp-upstream": "file:/Users/mamounalamouri/GoHighLevel-MCP"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

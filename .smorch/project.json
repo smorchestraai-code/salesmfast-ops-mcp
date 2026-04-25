@@ -1,0 +1,21 @@
+{
+  "project": "salesmfast-ops-mcp",
+  "path": "a",
+  "plugins": ["smorch-dev", "smorch-ops"],
+  "locale": "en-US",
+  "qa": {
+    "rollback_drill": "optional",
+    "rollback_drill_justification": "Stdio MCP server installed via claude_desktop_config.json. Rollback = revert one config block in the host config; no PM2 or SSH deploy. Drill is structurally N/A. CEO-approved 2026-04-26 (Mamoun Alamouri) per /smo-plan workflow."
+  },
+  "checks": {
+    "mena_mobile": false,
+    "arabic_rtl": false,
+    "english_axe": false,
+    "rationale": "Developer-tool MCP server. No UI surface — neither MENA nor general accessibility checks apply."
+  },
+  "ship_gates": {
+    "composite_min": 92,
+    "hat_floor": 8.5,
+    "security_floor": 9.0
+  }
+}
