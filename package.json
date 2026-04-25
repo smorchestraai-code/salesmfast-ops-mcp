@@ -11,6 +11,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "prebuild": "tsx scripts/gen-mapping-doc.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "start": "node dist/server.js",
