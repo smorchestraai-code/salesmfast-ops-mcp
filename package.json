@@ -11,12 +11,13 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "prebuild": "tsx scripts/gen-mapping-doc.ts",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "start": "node dist/server.js",
     "probe": "tsx scripts/probe.ts",
     "docs:mapping": "tsx scripts/gen-mapping-doc.ts",
-    "lint": "tsc --noEmit",
+    "lint": "tsc -p tsconfig.scripts.json",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\""
   },
   "dependencies": {

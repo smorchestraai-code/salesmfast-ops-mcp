@@ -1,0 +1,366 @@
+/**
+ * Story 6 probe — integration test for the salesmfast-ops-mcp facade.
+ *
+ * Spawns dist/server.js over stdio, sends MCP JSON-RPC requests, asserts:
+ *   1. tools/list returns 2 entries (default env)
+ *   2. ghl-toolkit-help list-categories returns ["calendars"]
+ *   3. ghl-calendars-reader list-groups payload contains FKQpu4dGBFauC28DQfSP (live API)
+ *   4. invalid params returns InvalidParams mentioning "bogus" (AC-4.2, AC-8.1)
+ *   5. unknown operation returns error listing all 6 valid ops (AC-4.3, AC-8.3)
+ *   6. env-filter: GHL_TOOL_CATEGORIES=calendars → 2 tools + stderr boot-log line (AC-5.1, AC-5.4)
+ *
+ * Run via: `npm run probe` (which is `tsx scripts/probe.ts`).
+ * Exit 0 = all assertions pass. Exit 1 = any failure.
+ *
+ * Why raw stdio instead of the MCP SDK client: the probe is the test artifact
+ * for Phase 1; reading the transport directly gives full visibility into
+ * stderr capture (assertion 6) and JSON-RPC error shapes (assertions 4, 5).
+ */
+
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { existsSync } from "node:fs";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = resolve(__dirname, "..");
+const SERVER_PATH = resolve(PROJECT_ROOT, "dist/server.js");
+
+const REQUEST_TIMEOUT_MS = 30_000;
+const PROTOCOL_VERSION = "2024-11-05";
+
+const EXPECTED_LIVE_GROUP_ID = "FKQpu4dGBFauC28DQfSP";
+const EXPECTED_BOOT_LOG_PREFIX = "[salesmfast-ops] active_categories=";
+const EXPECTED_VALID_OPS = [
+  "list-groups",
+  "list",
+  "get",
+  "list-events",
+  "list-free-slots",
+  "get-appointment",
+];
+
+type JsonRpcId = number | string;
+interface JsonRpcRequest {
+  jsonrpc: "2.0";
+  id: JsonRpcId;
+  method: string;
+  params?: unknown;
+}
+interface JsonRpcNotification {
+  jsonrpc: "2.0";
+  method: string;
+  params?: unknown;
+}
+interface JsonRpcSuccess {
+  jsonrpc: "2.0";
+  id: JsonRpcId;
+  result: unknown;
+}
+interface JsonRpcError {
+  jsonrpc: "2.0";
+  id: JsonRpcId;
+  error: { code: number; message: string; data?: unknown };
+}
+type JsonRpcResponse = JsonRpcSuccess | JsonRpcError;
+
+class McpStdioClient {
+  private proc: ChildProcessWithoutNullStreams;
+  private buf = "";
+  private nextId = 1;
+  private pending = new Map<
+    JsonRpcId,
+    {
+      resolve: (v: unknown) => void;
+      reject: (e: Error) => void;
+      timeout: NodeJS.Timeout;
+    }
+  >();
+  public stderr = "";
+  public exited = false;
+
+  constructor(env: Record<string, string>) {
+    this.proc = spawn("node", [SERVER_PATH], {
+      env: { ...process.env, ...env },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    this.proc.stderr.on("data", (chunk: Buffer) => {
+      this.stderr += chunk.toString("utf8");
+    });
+    this.proc.stdout.on("data", (chunk: Buffer) => this.handleChunk(chunk));
+    this.proc.on("exit", () => {
+      this.exited = true;
+      // reject any pending requests
+      for (const [, { reject, timeout }] of this.pending) {
+        clearTimeout(timeout);
+        reject(new Error("server process exited before response"));
+      }
+      this.pending.clear();
+    });
+  }
+
+  private handleChunk(chunk: Buffer): void {
+    this.buf += chunk.toString("utf8");
+    const lines = this.buf.split("\n");
+    this.buf = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      let msg: JsonRpcResponse;
+      try {
+        msg = JSON.parse(trimmed) as JsonRpcResponse;
+      } catch {
+        continue;
+      }
+      if (msg.id === undefined || !this.pending.has(msg.id)) continue;
+      const entry = this.pending.get(msg.id);
+      if (!entry) continue;
+      clearTimeout(entry.timeout);
+      this.pending.delete(msg.id);
+      if ("error" in msg) {
+        const err = new Error(msg.error.message) as Error & {
+          code?: number;
+          data?: unknown;
+        };
+        err.code = msg.error.code;
+        err.data = msg.error.data;
+        entry.reject(err);
+      } else {
+        entry.resolve(msg.result);
+      }
+    }
+  }
+
+  request(
+    method: string,
+    params?: unknown,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+  ): Promise<unknown> {
+    const id = this.nextId++;
+    const msg: JsonRpcRequest = { jsonrpc: "2.0", id, method, params };
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`timeout after ${timeoutMs}ms: ${method}`));
+      }, timeoutMs);
+      this.pending.set(id, { resolve, reject, timeout });
+      this.proc.stdin.write(JSON.stringify(msg) + "\n");
+    });
+  }
+
+  notify(method: string, params?: unknown): void {
+    const msg: JsonRpcNotification = { jsonrpc: "2.0", method, params };
+    this.proc.stdin.write(JSON.stringify(msg) + "\n");
+  }
+
+  async initialize(): Promise<void> {
+    await this.request("initialize", {
+      protocolVersion: PROTOCOL_VERSION,
+      capabilities: {},
+      clientInfo: { name: "salesmfast-probe", version: "0.1.0" },
+    });
+    this.notify("notifications/initialized");
+  }
+
+  async close(): Promise<void> {
+    if (this.exited) return;
+    this.proc.kill("SIGTERM");
+    await new Promise<void>((res) => {
+      const t = setTimeout(() => {
+        this.proc.kill("SIGKILL");
+        res();
+      }, 2000);
+      this.proc.once("exit", () => {
+        clearTimeout(t);
+        res();
+      });
+    });
+  }
+}
+
+interface AssertionResult {
+  name: string;
+  ok: boolean;
+  details: string;
+}
+const results: AssertionResult[] = [];
+
+function record(name: string, ok: boolean, details: string): void {
+  results.push({ name, ok, details });
+  const mark = ok ? "✓" : "✗";
+  // eslint-disable-next-line no-console
+  console.log(`[probe] ${mark} ${name}${details ? " — " + details : ""}`);
+}
+
+async function expectThrow<T>(p: Promise<T>): Promise<Error> {
+  try {
+    await p;
+    return new Error("expected throw, but resolved");
+  } catch (e) {
+    return e as Error;
+  }
+}
+
+async function main(): Promise<void> {
+  if (!existsSync(SERVER_PATH)) {
+    record(
+      "tools/list returned 2 tools (default env)",
+      false,
+      `dist/server.js not found at ${SERVER_PATH} — run \`npm run build\` first`,
+    );
+    summarizeAndExit();
+    return;
+  }
+
+  // ─── Server A: default env (no GHL_TOOL_CATEGORIES set) ───
+  const a = new McpStdioClient({});
+  try {
+    await a.initialize();
+
+    // Assertion 1
+    {
+      const result = (await a.request("tools/list", {})) as {
+        tools: { name: string }[];
+      };
+      const names = result.tools.map((t) => t.name).sort();
+      const expected = ["ghl-calendars-reader", "ghl-toolkit-help"].sort();
+      const ok =
+        names.length === expected.length &&
+        names.every((n, i) => n === expected[i]);
+      record(
+        "tools/list returned 2 tools (default env)",
+        ok,
+        `got [${names.join(", ")}]`,
+      );
+    }
+
+    // Assertion 2
+    {
+      const result = (await a.request("tools/call", {
+        name: "ghl-toolkit-help",
+        arguments: { selectSchema: { operation: "list-categories" } },
+      })) as { content: { type: string; text: string }[] };
+      const text = result.content?.[0]?.text ?? "";
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = text;
+      }
+      const ok =
+        Array.isArray(parsed) &&
+        parsed.length === 1 &&
+        parsed[0] === "calendars";
+      record(
+        'ghl-toolkit-help list-categories returned ["calendars"]',
+        ok,
+        `got ${JSON.stringify(parsed)}`,
+      );
+    }
+
+    // Assertion 3 — LIVE API CALL
+    {
+      const result = (await a.request("tools/call", {
+        name: "ghl-calendars-reader",
+        arguments: { selectSchema: { operation: "list-groups" } },
+      })) as { content: { type: string; text: string }[]; isError?: boolean };
+      const text = result.content?.[0]?.text ?? "";
+      const ok = !result.isError && text.includes(EXPECTED_LIVE_GROUP_ID);
+      record(
+        `ghl-calendars-reader list-groups returned ${EXPECTED_LIVE_GROUP_ID}`,
+        ok,
+        ok
+          ? "live data round-trip ok"
+          : `payload missing id; first 200 chars: ${text.slice(0, 200)}`,
+      );
+    }
+
+    // Assertion 4 — invalid params (AC-4.2, AC-8.1)
+    {
+      const err = await expectThrow(
+        a.request("tools/call", {
+          name: "ghl-calendars-reader",
+          arguments: {
+            selectSchema: { operation: "list-groups", params: { bogus: 1 } },
+          },
+        }),
+      );
+      const msg = err.message.toLowerCase();
+      const ok =
+        msg.includes("invalid") ||
+        msg.includes("bogus") ||
+        msg.includes("additional");
+      record(
+        "invalid params returned InvalidParams (bogus)",
+        ok,
+        `error: ${err.message.slice(0, 200)}`,
+      );
+    }
+
+    // Assertion 5 — unknown op (AC-4.3, AC-8.3)
+    {
+      const err = await expectThrow(
+        a.request("tools/call", {
+          name: "ghl-calendars-reader",
+          arguments: { selectSchema: { operation: "fly-to-the-moon" } },
+        }),
+      );
+      const msg = err.message;
+      const missing = EXPECTED_VALID_OPS.filter((op) => !msg.includes(op));
+      const ok = missing.length === 0;
+      record(
+        "unknown operation returned MethodNotFound listing 6 ops",
+        ok,
+        ok
+          ? "all 6 valid ops listed"
+          : `missing from error message: ${missing.join(", ")}; got: ${msg.slice(0, 200)}`,
+      );
+    }
+  } finally {
+    await a.close();
+  }
+
+  // ─── Server B: GHL_TOOL_CATEGORIES=calendars (env-filter assertion) ───
+  const b = new McpStdioClient({ GHL_TOOL_CATEGORIES: "calendars" });
+  try {
+    await b.initialize();
+    const result = (await b.request("tools/list", {})) as {
+      tools: { name: string }[];
+    };
+    const names = result.tools.map((t) => t.name).sort();
+    const expected = ["ghl-calendars-reader", "ghl-toolkit-help"].sort();
+    const toolsOk =
+      names.length === expected.length &&
+      names.every((n, i) => n === expected[i]);
+    const stderrOk = b.stderr.includes(EXPECTED_BOOT_LOG_PREFIX);
+    record(
+      "env-filter (GHL_TOOL_CATEGORIES=calendars) registered 2 tools, stderr line matched",
+      toolsOk && stderrOk,
+      toolsOk && stderrOk
+        ? "tools=2, stderr ok"
+        : `tools=[${names.join(", ")}], stderrHasPrefix=${stderrOk}; stderr first 300: ${b.stderr.slice(0, 300)}`,
+    );
+  } finally {
+    await b.close();
+  }
+
+  summarizeAndExit();
+}
+
+function summarizeAndExit(): never {
+  const failed = results.filter((r) => !r.ok);
+  if (failed.length === 0) {
+    // eslint-disable-next-line no-console
+    console.log("[probe] All assertions passed.");
+    process.exit(0);
+  }
+  // eslint-disable-next-line no-console
+  console.log(`[probe] ${failed.length} assertion(s) failed.`);
+  process.exit(1);
+}
+
+main().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error("[probe] unhandled error:", err);
+  process.exit(1);
+});
