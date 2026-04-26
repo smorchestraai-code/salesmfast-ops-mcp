@@ -277,6 +277,23 @@ Every old tool name maps to one operation under one router. The router's input i
 
 **After slice 8: 171 upstream tool names → 24 routers + 174 operations** (still 3 `ghl-toolkit-help` ops). 25 facade tools registered on the host. Note: `ghl-payments-reader` requires payments.readonly scope on the PIT — dev PIT lacks this (precedent L-SMO-009).
 
+#### Slice 9 — Content (added 2026-04-26, tag `v0.3.2-slice-9-content`)
+
+| Old (`mcp__ghl-mcp__<name>`) | New router | New operation |
+|---|---|---|
+| `get_blog_sites` | `ghl-blog-reader` | `get-sites` |
+| `get_blog_posts` | `ghl-blog-reader` | `get-posts` |
+| `get_blog_authors` | `ghl-blog-reader` | `get-authors` |
+| `get_blog_categories` | `ghl-blog-reader` | `get-categories` |
+| `check_url_slug` | `ghl-blog-reader` | `check-url-slug` |
+| `create_blog_post` | `ghl-blog-updater` | `create-post` |
+| `update_blog_post` | `ghl-blog-updater` | `update-post` |
+| `get_media_files` | `ghl-media-reader` | `get-files` |
+| `upload_media_file` | `ghl-media-updater` | `upload-file` |
+| `delete_media_file` | `ghl-media-updater` | `delete-file` |
+
+**After slice 9: 181 upstream tool names → 28 routers + 184 operations**. 29 facade tools registered on the host.
+
 ### Worked example
 
 **Old call:**

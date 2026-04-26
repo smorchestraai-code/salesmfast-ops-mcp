@@ -198,6 +198,20 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
       label: `ghl-store-reader list-shipping-zones returns "${EXPECTED_STORE_FRAGMENT}" success text`,
     },
   },
+  // ─── Slice 9 (Content) ────────────────────────────────────────────────
+  {
+    category: "blog",
+    expectedRouters: ["ghl-blog-reader", "ghl-blog-updater"],
+    // No liveRead: blog endpoints in dev location may be empty/unconfigured.
+    // Router-only assertion; full verification waits for blog-active client.
+  },
+  {
+    category: "media",
+    expectedRouters: ["ghl-media-reader", "ghl-media-updater"],
+    // No liveRead: media `get_media_files` requires `type` param; assertion
+    // would either need a known fixture (none on dev) or accept the upstream
+    // validation envelope. Router-only for now; verify via opt-in probe later.
+  },
   {
     category: "location",
     expectedRouters: ["ghl-location-reader", "ghl-location-updater"],

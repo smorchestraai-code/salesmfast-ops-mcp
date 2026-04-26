@@ -175,3 +175,21 @@ declare module "ghl-mcp-upstream/dist/tools/store-tools.js" {
     ): Promise<unknown>;
   }
 }
+
+// ─── Slice 9 (Content) ──────────────────────────────────────────────────
+
+declare module "ghl-mcp-upstream/dist/tools/blog-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class BlogTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/media-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class MediaTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}

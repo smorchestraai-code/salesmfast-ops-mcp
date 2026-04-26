@@ -37,6 +37,9 @@ import { createInvoiceReader, createInvoiceUpdater } from "./invoice.js";
 import { createProductsReader, createProductsUpdater } from "./products.js";
 import { createPaymentsReader, createPaymentsUpdater } from "./payments.js";
 import { createStoreReader, createStoreUpdater } from "./store.js";
+// ─── Slice 9 (Content) ───
+import { createBlogReader, createBlogUpdater } from "./blog.js";
+import { createMediaReader, createMediaUpdater } from "./media.js";
 import { createHelp } from "./help.js";
 import type { RouterDef } from "./types.js";
 
@@ -181,6 +184,25 @@ export function buildRouters(
     }
     if (Object.keys(operations.store.updater).length > 0) {
       routers.push(createStoreUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  // ─── Slice 9 (Content) ────
+  if (activeCategories.includes("blog")) {
+    if (Object.keys(operations.blog.reader).length > 0) {
+      routers.push(createBlogReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.blog.updater).length > 0) {
+      routers.push(createBlogUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("media")) {
+    if (Object.keys(operations.media.reader).length > 0) {
+      routers.push(createMediaReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.media.updater).length > 0) {
+      routers.push(createMediaUpdater(upstream, env.deniedOps));
     }
   }
 
