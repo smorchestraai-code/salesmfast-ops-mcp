@@ -414,6 +414,36 @@ npm run probe:write   # 4/4 round-trip on a real contact (create → get → del
 
 ---
 
+## Param-passing quirk — locationId / altId
+
+A small UX wart inherited from the upstream's tool wrappers:
+
+- **Location ops** (`ghl-location-reader.list-tags`, `list-custom-fields`, `list-templates`, etc.): upstream extracts `params.locationId` and bakes it into the URL. The GHLApiClient does NOT auto-inject from its config. **Operators must pass `locationId` explicitly** in `selectSchema.params`:
+
+  ```js
+  ghl-location-reader({
+    selectSchema: {
+      operation: "list-tags",
+      params: { locationId: "<your-location-id>" }
+    }
+  })
+  ```
+
+- **Payments ops** (`ghl-payments-reader.list-orders`, `list-transactions`, etc.): upstream passes args verbatim as query params. Operators must pass `altId` + `altType: "location"`:
+
+  ```js
+  ghl-payments-reader({
+    selectSchema: {
+      operation: "list-orders",
+      params: { altId: "<your-location-id>", altType: "location", limit: 20 }
+    }
+  })
+  ```
+
+The affected ops have `additionalProperties: true` in the manifest so these params pass through without schema rejection. Phase 2.5 cleanup candidate: factory-level `paramInjections` to auto-merge `locationId` for location ops.
+
+---
+
 ## Failure modes during migration
 
 | Symptom | Likely cause | Fix |

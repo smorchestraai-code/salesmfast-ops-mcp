@@ -1079,8 +1079,10 @@ export const operations: Manifest = {
       },
       "list-tags": {
         upstream: "get_location_tags",
-        description: "List all tags defined for the location.",
+        description:
+          "List all tags defined for the location. Pass `locationId` in params (upstream extracts it explicitly, not auto-injected).",
         params: [],
+        additionalProperties: true,
       },
       "get-tag": {
         upstream: "get_location_tag",
@@ -1103,8 +1105,10 @@ export const operations: Manifest = {
       },
       "list-custom-fields": {
         upstream: "get_location_custom_fields",
-        description: "List all custom fields defined for the location.",
+        description:
+          "List all custom fields defined for the location. Pass `locationId` in params.",
         params: [],
+        additionalProperties: true,
       },
       "get-custom-field": {
         upstream: "get_location_custom_field",
@@ -1120,8 +1124,10 @@ export const operations: Manifest = {
       },
       "list-custom-values": {
         upstream: "get_location_custom_values",
-        description: "List all custom values defined for the location.",
+        description:
+          "List all custom values defined for the location. Pass `locationId` in params.",
         params: [],
+        additionalProperties: true,
       },
       "get-custom-value": {
         upstream: "get_location_custom_value",
@@ -1138,13 +1144,16 @@ export const operations: Manifest = {
       "list-templates": {
         upstream: "get_location_templates",
         description:
-          "List message / SMS / email templates defined for the location.",
+          "List message / SMS / email templates defined for the location. Pass `locationId` in params.",
         params: [],
+        additionalProperties: true,
       },
       "list-timezones": {
         upstream: "get_timezones",
-        description: "List the IANA timezones supported by GoHighLevel.",
+        description:
+          "List the IANA timezones supported by GoHighLevel. Pass `locationId` in params.",
         params: [],
+        additionalProperties: true,
       },
     },
     updater: {

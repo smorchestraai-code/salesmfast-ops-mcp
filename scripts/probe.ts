@@ -183,10 +183,20 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
   {
     category: "payments",
     expectedRouters: ["ghl-payments-reader", "ghl-payments-updater"],
-    // No liveRead: dev PIT lacks payments.readonly scope via upstream path
-    // (direct curl to /payments/orders returned 200 but upstream's
-    // handleToolCall returned 403). Same situation as location/L-SMO-009.
-    // Router still verified via tools/list + help.list-categories.
+    liveRead: {
+      router: "ghl-payments-reader",
+      operation: "list-orders",
+      // Upstream's PaymentsTools.listOrders passes args verbatim as query
+      // params — needs altId + altType + (optional) limit.
+      params: {
+        altId: "UNw9DraGO3eyEa5l4lkJ",
+        altType: "location",
+        limit: 1,
+      },
+      expectFragment: "69cd80b81034639d37cb3e6f",
+      label:
+        "ghl-payments-reader list-orders returned 69cd80b81034639d37cb3e6f",
+    },
   },
   {
     category: "store",
@@ -202,15 +212,25 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
   {
     category: "blog",
     expectedRouters: ["ghl-blog-reader", "ghl-blog-updater"],
-    // No liveRead: blog endpoints in dev location may be empty/unconfigured.
-    // Router-only assertion; full verification waits for blog-active client.
+    liveRead: {
+      router: "ghl-blog-reader",
+      operation: "get-sites",
+      // Dev location has 2 blog sites: "smo" (bzdoFos3mryVv2UCFddr) and "test".
+      expectFragment: "bzdoFos3mryVv2UCFddr",
+      label:
+        "ghl-blog-reader get-sites returned site bzdoFos3mryVv2UCFddr (smo)",
+    },
   },
   {
     category: "media",
     expectedRouters: ["ghl-media-reader", "ghl-media-updater"],
-    // No liveRead: media `get_media_files` requires `type` param; assertion
-    // would either need a known fixture (none on dev) or accept the upstream
-    // validation envelope. Router-only for now; verify via opt-in probe later.
+    liveRead: {
+      router: "ghl-media-reader",
+      operation: "get-files",
+      params: { type: "image" },
+      expectFragment: "files",
+      label: "ghl-media-reader get-files returns files envelope",
+    },
   },
   // ─── Slice 10 (Custom Data) ───────────────────────────────────────────
   {
@@ -219,8 +239,17 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
       "ghl-custom-field-v2-reader",
       "ghl-custom-field-v2-updater",
     ],
-    // No liveRead: get-by-id needs an id; get-by-object-key needs a custom
-    // object key. Router-only on dev; use opt-in probe per Company-keyed call.
+    liveRead: {
+      router: "ghl-custom-field-v2-reader",
+      operation: "get-by-object-key",
+      // Custom-field v2 API rejects "contact" and "opportunity" objectKeys by
+      // design; use the dev location's custom Company schema's key.
+      // The schema id is 67cec41d11ea7017a8c72a33 ("Company"/"Companies").
+      params: { objectKey: "custom_objects.company" },
+      expectFragment: "fields",
+      label:
+        "ghl-custom-field-v2-reader get-by-object-key returns fields envelope (Company)",
+    },
   },
   {
     category: "object",
@@ -247,11 +276,16 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
   {
     category: "location",
     expectedRouters: ["ghl-location-reader", "ghl-location-updater"],
-    // No liveRead: dev PIT lacks `locations.readonly` scope (both list-tags and
-    // list-timezones return 403 Forbidden via upstream — confirmed via direct
-    // upstream.executeTool call, not a facade bug). Router still verified via
-    // tools/list + help.list-categories; full verification waits for a
-    // higher-scoped PIT. See lessons L-SMO-009.
+    liveRead: {
+      router: "ghl-location-reader",
+      operation: "list-tags",
+      // Upstream's LocationTools.getLocationTags expects `params.locationId` —
+      // it's not auto-injected from the GHLApiClient config. Same pattern for
+      // most location ops.
+      params: { locationId: "UNw9DraGO3eyEa5l4lkJ" },
+      expectFragment: "os2scn2e9L8PAaNhxy1l",
+      label: "ghl-location-reader list-tags returned os2scn2e9L8PAaNhxy1l",
+    },
   },
   {
     category: "workflow",

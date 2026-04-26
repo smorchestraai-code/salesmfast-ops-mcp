@@ -163,15 +163,15 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 |-----------|---------------|-------------|
 | `search` | `search_locations` | Search locations the API key has access to. Optional filters by name, etc. |
 | `get` | `get_location` | Get a single location by id (defaults to the configured GHL_LOCATION_ID). |
-| `list-tags` | `get_location_tags` | List all tags defined for the location. |
+| `list-tags` | `get_location_tags` | List all tags defined for the location. Pass `locationId` in params (upstream extracts it explicitly, not auto-injected). |
 | `get-tag` | `get_location_tag` | Get a single location tag by id. |
 | `search-tasks` | `search_location_tasks` | Search tasks across the location with optional filters (assignedTo, completed, dueDate, etc.). |
-| `list-custom-fields` | `get_location_custom_fields` | List all custom fields defined for the location. |
+| `list-custom-fields` | `get_location_custom_fields` | List all custom fields defined for the location. Pass `locationId` in params. |
 | `get-custom-field` | `get_location_custom_field` | Get a single custom field definition by id. |
-| `list-custom-values` | `get_location_custom_values` | List all custom values defined for the location. |
+| `list-custom-values` | `get_location_custom_values` | List all custom values defined for the location. Pass `locationId` in params. |
 | `get-custom-value` | `get_location_custom_value` | Get a single custom value by id. |
-| `list-templates` | `get_location_templates` | List message / SMS / email templates defined for the location. |
-| `list-timezones` | `get_timezones` | List the IANA timezones supported by GoHighLevel. |
+| `list-templates` | `get_location_templates` | List message / SMS / email templates defined for the location. Pass `locationId` in params. |
+| `list-timezones` | `get_timezones` | List the IANA timezones supported by GoHighLevel. Pass `locationId` in params. |
 
 ### `ghl-location-updater` (13 operations)
 
