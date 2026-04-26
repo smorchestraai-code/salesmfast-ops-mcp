@@ -325,6 +325,31 @@ export const operations: Manifest = {
           },
         ],
       },
+      // ─── Slice 11 cleanup (4 missing contacts ops) ─────────
+      "add-followers": {
+        upstream: "add_contact_followers",
+        description: "Add follower users to a contact.",
+        params: [REQ_CONTACT_ID],
+        additionalProperties: true,
+      },
+      "remove-followers": {
+        upstream: "remove_contact_followers",
+        description: "Remove follower users from a contact.",
+        params: [REQ_CONTACT_ID],
+        additionalProperties: true,
+      },
+      "bulk-update-business": {
+        upstream: "bulk_update_contact_business",
+        description: "Bulk-update the business on multiple contacts.",
+        params: [],
+        additionalProperties: true,
+      },
+      "bulk-update-tags": {
+        upstream: "bulk_update_contact_tags",
+        description: "Bulk add or remove tags on multiple contacts.",
+        params: [],
+        additionalProperties: true,
+      },
     },
   },
 
@@ -397,6 +422,33 @@ export const operations: Manifest = {
             description: "Message id.",
           },
         ],
+      },
+      // ─── Slice 11 cleanup (2 conversation read ops) ───────
+      "get-message-transcription": {
+        upstream: "get_message_transcription",
+        description: "Get the transcription text for a voice message.",
+        params: [
+          {
+            name: "messageId",
+            type: "string",
+            required: true,
+            description: "Message id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "download-transcription": {
+        upstream: "download_transcription",
+        description: "Download the transcription file for a voice message.",
+        params: [
+          {
+            name: "messageId",
+            type: "string",
+            required: true,
+            description: "Message id.",
+          },
+        ],
+        additionalProperties: true,
       },
     },
     updater: {
@@ -528,6 +580,25 @@ export const operations: Manifest = {
           },
         ],
       },
+      // ─── Slice 11 cleanup (3 conversation write ops) ──────
+      "add-inbound-message": {
+        upstream: "add_inbound_message",
+        description: "Manually log an inbound message in a conversation.",
+        params: [],
+        additionalProperties: true,
+      },
+      "add-outbound-call": {
+        upstream: "add_outbound_call",
+        description: "Manually log an outbound call in a conversation.",
+        params: [],
+        additionalProperties: true,
+      },
+      "live-chat-typing": {
+        upstream: "live_chat_typing",
+        description: "Send a typing indicator in a live-chat conversation.",
+        params: [],
+        additionalProperties: true,
+      },
     },
   },
 
@@ -636,6 +707,55 @@ export const operations: Manifest = {
           },
         ],
       },
+      // ─── Slice 11 cleanup (8 calendar read ops) ───────────
+      "get-blocked-slots": {
+        upstream: "get_blocked_slots",
+        description: "List blocked-time slots on a calendar.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-appointment-notes": {
+        upstream: "get_appointment_notes",
+        description: "List notes attached to an appointment.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-resources-rooms": {
+        upstream: "get_calendar_resources_rooms",
+        description: "List all room resources defined for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-resource-room": {
+        upstream: "get_calendar_resource_room",
+        description: "Get a single room resource by id.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-resources-equipment": {
+        upstream: "get_calendar_resources_equipments",
+        description: "List all equipment resources for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-resource-equipment": {
+        upstream: "get_calendar_resource_equipment",
+        description: "Get a single equipment resource by id.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-notifications": {
+        upstream: "get_calendar_notifications",
+        description: "List notification rules defined for a calendar.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-notification": {
+        upstream: "get_calendar_notification",
+        description: "Get a single calendar notification rule by id.",
+        params: [],
+        additionalProperties: true,
+      },
     },
     updater: {
       create: {
@@ -707,6 +827,121 @@ export const operations: Manifest = {
             description: "Appointment id.",
           },
         ],
+      },
+      // ─── Slice 11 cleanup (19 calendar write ops) ─────────
+      "create-block-slot": {
+        upstream: "create_block_slot",
+        description: "Create a blocked-time slot on a calendar.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-block-slot": {
+        upstream: "update_block_slot",
+        description: "Update a blocked-time slot.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-group": {
+        upstream: "create_calendar_group",
+        description: "Create a new calendar group.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-group": {
+        upstream: "update_calendar_group",
+        description: "Update an existing calendar group.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-group": {
+        upstream: "delete_calendar_group",
+        description: "Delete a calendar group.",
+        params: [],
+        additionalProperties: true,
+      },
+      "disable-group": {
+        upstream: "disable_calendar_group",
+        description: "Disable a calendar group (without deleting).",
+        params: [],
+        additionalProperties: true,
+      },
+      "validate-group-slug": {
+        upstream: "validate_group_slug",
+        description: "Validate a calendar-group URL slug for availability.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-appointment-note": {
+        upstream: "create_appointment_note",
+        description: "Create a note on an appointment.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-appointment-note": {
+        upstream: "update_appointment_note",
+        description: "Update an existing appointment note.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-appointment-note": {
+        upstream: "delete_appointment_note",
+        description: "Delete an appointment note.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-resource-room": {
+        upstream: "create_calendar_resource_room",
+        description: "Create a room resource for calendar bookings.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-resource-room": {
+        upstream: "update_calendar_resource_room",
+        description: "Update a room resource.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-resource-room": {
+        upstream: "delete_calendar_resource_room",
+        description: "Delete a room resource.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-resource-equipment": {
+        upstream: "create_calendar_resource_equipment",
+        description: "Create an equipment resource for calendar bookings.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-resource-equipment": {
+        upstream: "update_calendar_resource_equipment",
+        description: "Update an equipment resource.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-resource-equipment": {
+        upstream: "delete_calendar_resource_equipment",
+        description: "Delete an equipment resource.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-notification": {
+        upstream: "create_calendar_notifications",
+        description: "Create a calendar notification rule.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-notification": {
+        upstream: "update_calendar_notification",
+        description: "Update a calendar notification rule.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-notification": {
+        upstream: "delete_calendar_notification",
+        description: "Delete a calendar notification rule.",
+        params: [],
+        additionalProperties: true,
       },
     },
   },
@@ -796,6 +1031,33 @@ export const operations: Manifest = {
             description: "Opportunity id.",
           },
         ],
+      },
+      // ─── Slice 11 cleanup (2 opportunity write ops) ───────
+      "add-followers": {
+        upstream: "add_opportunity_followers",
+        description: "Add follower users to an opportunity.",
+        params: [
+          {
+            name: "opportunityId",
+            type: "string",
+            required: true,
+            description: "Opportunity id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "remove-followers": {
+        upstream: "remove_opportunity_followers",
+        description: "Remove follower users from an opportunity.",
+        params: [
+          {
+            name: "opportunityId",
+            type: "string",
+            required: true,
+            description: "Opportunity id.",
+          },
+        ],
+        additionalProperties: true,
       },
     },
   },
@@ -923,6 +1185,68 @@ export const operations: Manifest = {
             description: "Location tag id.",
           },
         ],
+      },
+      // ─── Slice 11 cleanup (10 location write ops) ─────────
+      create: {
+        upstream: "create_location",
+        description: "Create a new sub-account location (agency-level only).",
+        params: [],
+        additionalProperties: true,
+      },
+      update: {
+        upstream: "update_location",
+        description: "Update an existing location's settings.",
+        params: [],
+        additionalProperties: true,
+      },
+      delete: {
+        upstream: "delete_location",
+        description: "Delete a location (agency-level only). DESTRUCTIVE.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-custom-field": {
+        upstream: "create_location_custom_field",
+        description: "Create a new custom field on the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-custom-field": {
+        upstream: "update_location_custom_field",
+        description: "Update an existing location custom field.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-custom-field": {
+        upstream: "delete_location_custom_field",
+        description: "Delete a location custom field.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-custom-value": {
+        upstream: "create_location_custom_value",
+        description: "Create a new custom value on the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-custom-value": {
+        upstream: "update_location_custom_value",
+        description: "Update an existing location custom value.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-custom-value": {
+        upstream: "delete_location_custom_value",
+        description: "Delete a location custom value.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-template": {
+        upstream: "delete_location_template",
+        description:
+          "Delete a message / SMS / email template from the location.",
+        params: [],
+        additionalProperties: true,
       },
     },
   },

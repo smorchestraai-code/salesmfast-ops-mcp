@@ -23,7 +23,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `get-note` | `get_contact_note` | Get a single note by id. |
 | `list-appointments` | `get_contact_appointments` | List appointments attached to a contact. |
 
-### `ghl-contacts-updater` (18 operations)
+### `ghl-contacts-updater` (22 operations)
 
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
@@ -45,10 +45,14 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `remove-from-all-campaigns` | `remove_contact_from_all_campaigns` | Remove a contact from every campaign in the location. |
 | `add-to-workflow` | `add_contact_to_workflow` | Add a contact to a workflow. Optional eventStartTime to schedule entry. |
 | `remove-from-workflow` | `remove_contact_from_workflow` | Remove a contact from a workflow. |
+| `add-followers` | `add_contact_followers` | Add follower users to a contact. |
+| `remove-followers` | `remove_contact_followers` | Remove follower users from a contact. |
+| `bulk-update-business` | `bulk_update_contact_business` | Bulk-update the business on multiple contacts. |
+| `bulk-update-tags` | `bulk_update_contact_tags` | Bulk add or remove tags on multiple contacts. |
 
 ## conversations
 
-### `ghl-conversations-reader` (6 operations)
+### `ghl-conversations-reader` (8 operations)
 
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
@@ -58,8 +62,10 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `get-email-message` | `get_email_message` | Get a single email message by id. |
 | `get-recent-messages` | `get_recent_messages` | List recent messages in a conversation. |
 | `get-message-recording` | `get_message_recording` | Get the recording (binary URL) for a voice message. |
+| `get-message-transcription` | `get_message_transcription` | Get the transcription text for a voice message. |
+| `download-transcription` | `download_transcription` | Download the transcription file for a voice message. |
 
-### `ghl-conversations-updater` (9 operations)
+### `ghl-conversations-updater` (12 operations)
 
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
@@ -72,10 +78,13 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `update-message-status` | `update_message_status` | Update a message's delivery status. |
 | `cancel-scheduled-message` | `cancel_scheduled_message` | Cancel a previously-scheduled SMS or message. |
 | `cancel-scheduled-email` | `cancel_scheduled_email` | Cancel a previously-scheduled email. |
+| `add-inbound-message` | `add_inbound_message` | Manually log an inbound message in a conversation. |
+| `add-outbound-call` | `add_outbound_call` | Manually log an outbound call in a conversation. |
+| `live-chat-typing` | `live_chat_typing` | Send a typing indicator in a live-chat conversation. |
 
 ## calendars
 
-### `ghl-calendars-reader` (6 operations)
+### `ghl-calendars-reader` (14 operations)
 
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
@@ -85,8 +94,16 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `list-events` | `get_calendar_events` | List events for a calendar in a date range. |
 | `list-free-slots` | `get_free_slots` | List free slots in a calendar for a date range. |
 | `get-appointment` | `get_appointment` | Get a single appointment by id. |
+| `get-blocked-slots` | `get_blocked_slots` | List blocked-time slots on a calendar. |
+| `list-appointment-notes` | `get_appointment_notes` | List notes attached to an appointment. |
+| `list-resources-rooms` | `get_calendar_resources_rooms` | List all room resources defined for the location. |
+| `get-resource-room` | `get_calendar_resource_room` | Get a single room resource by id. |
+| `list-resources-equipment` | `get_calendar_resources_equipments` | List all equipment resources for the location. |
+| `get-resource-equipment` | `get_calendar_resource_equipment` | Get a single equipment resource by id. |
+| `list-notifications` | `get_calendar_notifications` | List notification rules defined for a calendar. |
+| `get-notification` | `get_calendar_notification` | Get a single calendar notification rule by id. |
 
-### `ghl-calendars-updater` (6 operations)
+### `ghl-calendars-updater` (25 operations)
 
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
@@ -96,6 +113,25 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `create-appointment` | `create_appointment` | Create an appointment on a calendar. |
 | `update-appointment` | `update_appointment` | Update an existing appointment. |
 | `delete-appointment` | `delete_appointment` | Delete an appointment by id. |
+| `create-block-slot` | `create_block_slot` | Create a blocked-time slot on a calendar. |
+| `update-block-slot` | `update_block_slot` | Update a blocked-time slot. |
+| `create-group` | `create_calendar_group` | Create a new calendar group. |
+| `update-group` | `update_calendar_group` | Update an existing calendar group. |
+| `delete-group` | `delete_calendar_group` | Delete a calendar group. |
+| `disable-group` | `disable_calendar_group` | Disable a calendar group (without deleting). |
+| `validate-group-slug` | `validate_group_slug` | Validate a calendar-group URL slug for availability. |
+| `create-appointment-note` | `create_appointment_note` | Create a note on an appointment. |
+| `update-appointment-note` | `update_appointment_note` | Update an existing appointment note. |
+| `delete-appointment-note` | `delete_appointment_note` | Delete an appointment note. |
+| `create-resource-room` | `create_calendar_resource_room` | Create a room resource for calendar bookings. |
+| `update-resource-room` | `update_calendar_resource_room` | Update a room resource. |
+| `delete-resource-room` | `delete_calendar_resource_room` | Delete a room resource. |
+| `create-resource-equipment` | `create_calendar_resource_equipment` | Create an equipment resource for calendar bookings. |
+| `update-resource-equipment` | `update_calendar_resource_equipment` | Update an equipment resource. |
+| `delete-resource-equipment` | `delete_calendar_resource_equipment` | Delete an equipment resource. |
+| `create-notification` | `create_calendar_notifications` | Create a calendar notification rule. |
+| `update-notification` | `update_calendar_notification` | Update a calendar notification rule. |
+| `delete-notification` | `delete_calendar_notification` | Delete a calendar notification rule. |
 
 ## opportunities
 
@@ -107,7 +143,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `get` | `get_opportunity` | Get a single opportunity by id. |
 | `list-pipelines` | `get_pipelines` | List all pipelines and stages in the location. |
 
-### `ghl-opportunities-updater` (5 operations)
+### `ghl-opportunities-updater` (7 operations)
 
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
@@ -116,6 +152,8 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `update-status` | `update_opportunity_status` | Update an opportunity's status (open / won / lost / abandoned). |
 | `upsert` | `upsert_opportunity` | Create-or-update an opportunity, matching by external id or fields. |
 | `delete` | `delete_opportunity` | Delete an opportunity by id. |
+| `add-followers` | `add_opportunity_followers` | Add follower users to an opportunity. |
+| `remove-followers` | `remove_opportunity_followers` | Remove follower users from an opportunity. |
 
 ## location
 
@@ -135,13 +173,23 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `list-templates` | `get_location_templates` | List message / SMS / email templates defined for the location. |
 | `list-timezones` | `get_timezones` | List the IANA timezones supported by GoHighLevel. |
 
-### `ghl-location-updater` (3 operations)
+### `ghl-location-updater` (13 operations)
 
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
 | `create-tag` | `create_location_tag` | Create a new tag in the location. |
 | `update-tag` | `update_location_tag` | Update an existing location tag (rename, etc.). |
 | `delete-tag` | `delete_location_tag` | Delete a location tag by id. |
+| `create` | `create_location` | Create a new sub-account location (agency-level only). |
+| `update` | `update_location` | Update an existing location's settings. |
+| `delete` | `delete_location` | Delete a location (agency-level only). DESTRUCTIVE. |
+| `create-custom-field` | `create_location_custom_field` | Create a new custom field on the location. |
+| `update-custom-field` | `update_location_custom_field` | Update an existing location custom field. |
+| `delete-custom-field` | `delete_location_custom_field` | Delete a location custom field. |
+| `create-custom-value` | `create_location_custom_value` | Create a new custom value on the location. |
+| `update-custom-value` | `update_location_custom_value` | Update an existing location custom value. |
+| `delete-custom-value` | `delete_location_custom_value` | Delete a location custom value. |
+| `delete-template` | `delete_location_template` | Delete a message / SMS / email template from the location. |
 
 ## workflow
 
@@ -425,9 +473,9 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 
 ## Totals
 
-- Reader operations: **102**
-- Updater operations: **106**
-- Total: **208**
+- Reader operations: **112**
+- Updater operations: **144**
+- Total: **256**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.
