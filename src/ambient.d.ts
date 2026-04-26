@@ -30,3 +30,50 @@ declare module "ghl-mcp-upstream/dist/tools/calendar-tools.js" {
     executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
   }
 }
+
+declare module "ghl-mcp-upstream/dist/tools/contact-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class ContactTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/conversation-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class ConversationTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/opportunity-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class OpportunityTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/location-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class LocationTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/workflow-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class WorkflowTools {
+    constructor(client: GHLApiClient);
+    /**
+     * NOTE: WorkflowTools uses `executeWorkflowTool`, NOT `executeTool`.
+     * Per CLAUDE.md "Common pitfalls" — verify per upstream class.
+     */
+    executeWorkflowTool(
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<unknown>;
+  }
+}

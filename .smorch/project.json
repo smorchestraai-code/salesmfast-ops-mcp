@@ -14,8 +14,9 @@
     "rationale": "Developer-tool MCP server. No UI surface — neither MENA nor general accessibility checks apply."
   },
   "ship_gates": {
-    "composite_min": 92,
+    "composite_min": 95,
     "hat_floor": 8.5,
-    "security_floor": 9.0
+    "security_floor": 9.0,
+    "_note": "composite_min raised from 92 to 95 by Mamoun on 2026-04-26 after slice 1 shipped at 9.9. Tighter bar for slices 2-6 of Phase 1 and onward."
   }
 }
