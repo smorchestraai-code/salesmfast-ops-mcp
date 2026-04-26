@@ -13,6 +13,7 @@ import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
 import { CalendarTools } from "ghl-mcp-upstream/dist/tools/calendar-tools.js";
 import { ContactTools } from "ghl-mcp-upstream/dist/tools/contact-tools.js";
 import { ConversationTools } from "ghl-mcp-upstream/dist/tools/conversation-tools.js";
+import { LocationTools } from "ghl-mcp-upstream/dist/tools/location-tools.js";
 import { OpportunityTools } from "ghl-mcp-upstream/dist/tools/opportunity-tools.js";
 import type { ParsedEnv } from "./env.js";
 
@@ -22,6 +23,7 @@ export interface Upstream {
   readonly calendarTools: CalendarTools;
   readonly contactTools: ContactTools;
   readonly conversationTools: ConversationTools;
+  readonly locationTools: LocationTools;
   readonly opportunityTools: OpportunityTools;
 }
 
@@ -36,6 +38,7 @@ export function createUpstream(env: ParsedEnv): Upstream {
     calendarTools: new CalendarTools(client),
     contactTools: new ContactTools(client),
     conversationTools: new ConversationTools(client),
+    locationTools: new LocationTools(client),
     opportunityTools: new OpportunityTools(client),
   };
 }

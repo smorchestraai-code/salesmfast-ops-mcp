@@ -54,3 +54,11 @@ declare module "ghl-mcp-upstream/dist/tools/opportunity-tools.js" {
     executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
   }
 }
+
+declare module "ghl-mcp-upstream/dist/tools/location-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class LocationTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}

@@ -22,6 +22,7 @@ import {
   createConversationsReader,
   createConversationsUpdater,
 } from "./conversations.js";
+import { createLocationReader, createLocationUpdater } from "./location.js";
 import {
   createOpportunitiesReader,
   createOpportunitiesUpdater,
@@ -89,6 +90,15 @@ export function buildRouters(
     }
     if (Object.keys(operations.opportunities.updater).length > 0) {
       routers.push(createOpportunitiesUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("location")) {
+    if (Object.keys(operations.location.reader).length > 0) {
+      routers.push(createLocationReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.location.updater).length > 0) {
+      routers.push(createLocationUpdater(upstream, env.deniedOps));
     }
   }
 

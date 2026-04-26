@@ -38,6 +38,10 @@ const EXPECTED_LIVE_GROUP_ID = "FKQpu4dGBFauC28DQfSP"; //    calendars list-grou
 const EXPECTED_CONTACT_ID = "uHDvdJ5uiaX2TAwa9LH9"; //       contacts search
 const EXPECTED_CONVERSATION_ID = "Bh1aXpcKJOmhEMw1UeZa"; //  conversations search
 const EXPECTED_PIPELINE_ID = "Zf2Lv61fAmm4JliTRsxI"; //      opportunities list-pipelines (CLAUDE.md baseline)
+// Location live-read disabled: dev PIT lacks locations.readonly scope (slice 5).
+// Both list-tags and list-timezones return 403 via the upstream — the facade is
+// correct (clean upstreamError envelope) but the data path is gated. Re-enable
+// when a higher-scoped PIT is available.
 
 const EXPECTED_BOOT_LOG_PREFIX = "[salesmfast-ops] active_categories=";
 
@@ -107,6 +111,15 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
       expectFragment: EXPECTED_PIPELINE_ID,
       label: `ghl-opportunities-reader list-pipelines returned ${EXPECTED_PIPELINE_ID}`,
     },
+  },
+  {
+    category: "location",
+    expectedRouters: ["ghl-location-reader", "ghl-location-updater"],
+    // No liveRead: dev PIT lacks `locations.readonly` scope (both list-tags and
+    // list-timezones return 403 Forbidden via upstream — confirmed via direct
+    // upstream.executeTool call, not a facade bug). Router still verified via
+    // tools/list + help.list-categories; full verification waits for a
+    // higher-scoped PIT. See lessons L-SMO-009.
   },
 ];
 

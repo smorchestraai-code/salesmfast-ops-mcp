@@ -712,6 +712,132 @@ export const operations: Manifest = {
       },
     },
   },
-  location: { reader: {}, updater: {} },
+  location: {
+    reader: {
+      search: {
+        upstream: "search_locations",
+        description:
+          "Search locations the API key has access to. Optional filters by name, etc.",
+        params: [],
+        additionalProperties: true,
+      },
+      get: {
+        upstream: "get_location",
+        description:
+          "Get a single location by id (defaults to the configured GHL_LOCATION_ID).",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-tags": {
+        upstream: "get_location_tags",
+        description: "List all tags defined for the location.",
+        params: [],
+      },
+      "get-tag": {
+        upstream: "get_location_tag",
+        description: "Get a single location tag by id.",
+        params: [
+          {
+            name: "tagId",
+            type: "string",
+            required: true,
+            description: "Location tag id.",
+          },
+        ],
+      },
+      "search-tasks": {
+        upstream: "search_location_tasks",
+        description:
+          "Search tasks across the location with optional filters (assignedTo, completed, dueDate, etc.).",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-custom-fields": {
+        upstream: "get_location_custom_fields",
+        description: "List all custom fields defined for the location.",
+        params: [],
+      },
+      "get-custom-field": {
+        upstream: "get_location_custom_field",
+        description: "Get a single custom field definition by id.",
+        params: [
+          {
+            name: "customFieldId",
+            type: "string",
+            required: true,
+            description: "Custom field id.",
+          },
+        ],
+      },
+      "list-custom-values": {
+        upstream: "get_location_custom_values",
+        description: "List all custom values defined for the location.",
+        params: [],
+      },
+      "get-custom-value": {
+        upstream: "get_location_custom_value",
+        description: "Get a single custom value by id.",
+        params: [
+          {
+            name: "customValueId",
+            type: "string",
+            required: true,
+            description: "Custom value id.",
+          },
+        ],
+      },
+      "list-templates": {
+        upstream: "get_location_templates",
+        description:
+          "List message / SMS / email templates defined for the location.",
+        params: [],
+      },
+      "list-timezones": {
+        upstream: "get_timezones",
+        description: "List the IANA timezones supported by GoHighLevel.",
+        params: [],
+      },
+    },
+    updater: {
+      "create-tag": {
+        upstream: "create_location_tag",
+        description: "Create a new tag in the location.",
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Tag name.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "update-tag": {
+        upstream: "update_location_tag",
+        description: "Update an existing location tag (rename, etc.).",
+        params: [
+          {
+            name: "tagId",
+            type: "string",
+            required: true,
+            description: "Location tag id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-tag": {
+        upstream: "delete_location_tag",
+        description: "Delete a location tag by id.",
+        params: [
+          {
+            name: "tagId",
+            type: "string",
+            required: true,
+            description: "Location tag id.",
+          },
+        ],
+      },
+    },
+  },
   workflow: { reader: {}, updater: {} },
 } as const;

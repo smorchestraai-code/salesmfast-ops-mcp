@@ -106,13 +106,39 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `upsert` | `upsert_opportunity` | Create-or-update an opportunity, matching by external id or fields. |
 | `delete` | `delete_opportunity` | Delete an opportunity by id. |
 
+## location
+
+### `ghl-location-reader` (11 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `search` | `search_locations` | Search locations the API key has access to. Optional filters by name, etc. |
+| `get` | `get_location` | Get a single location by id (defaults to the configured GHL_LOCATION_ID). |
+| `list-tags` | `get_location_tags` | List all tags defined for the location. |
+| `get-tag` | `get_location_tag` | Get a single location tag by id. |
+| `search-tasks` | `search_location_tasks` | Search tasks across the location with optional filters (assignedTo, completed, dueDate, etc.). |
+| `list-custom-fields` | `get_location_custom_fields` | List all custom fields defined for the location. |
+| `get-custom-field` | `get_location_custom_field` | Get a single custom field definition by id. |
+| `list-custom-values` | `get_location_custom_values` | List all custom values defined for the location. |
+| `get-custom-value` | `get_location_custom_value` | Get a single custom value by id. |
+| `list-templates` | `get_location_templates` | List message / SMS / email templates defined for the location. |
+| `list-timezones` | `get_timezones` | List the IANA timezones supported by GoHighLevel. |
+
+### `ghl-location-updater` (3 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-tag` | `create_location_tag` | Create a new tag in the location. |
+| `update-tag` | `update_location_tag` | Update an existing location tag (rename, etc.). |
+| `delete-tag` | `delete_location_tag` | Delete a location tag by id. |
+
 ---
 
 ## Totals
 
-- Reader operations: **24**
-- Updater operations: **32**
-- Total: **56**
+- Reader operations: **35**
+- Updater operations: **35**
+- Total: **70**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.

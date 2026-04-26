@@ -66,6 +66,14 @@ Global lessons live in `~/.claude/lessons.md` and apply across all SMOrchestra p
 - **Enforcement:** Pattern replicates per slice; documented in CLAUDE.md decisions log; slice 1 retro lists this as a process delta for slices 2-6.
 - **Last triggered:** 2026-04-26
 
+### L-SMO-009 — GHL PIT scopes vary per category; probe live-reads can be scope-gated
+- **Captured:** 2026-04-26 (slice 5)
+- **Trigger:** Live-read assertion on `ghl-location-reader.list-tags` failed with `[upstream location] 500 Failed to get location tags: GHL API Error (500): GHL API Error (401): Request failed with status code 401`. Pivoted to `list-timezones` — same dev PIT, same locationId — got `403 Forbidden resource`. Yet direct curl to `/locations/{id}/tags` and `/locations/{id}/timezones` with the same PIT returned 200. Root cause: the upstream's call path uses a different OAuth scope check than the direct REST endpoint; the dev PIT in BRD section 10.2 lacks `locations.readonly` scope, while it has scopes for calendars / contacts / conversations / opportunities.
+- **Rule:** When adding a per-category live-read probe assertion, validate it against the dev PIT FIRST via direct `upstream.executeTool()` (not direct curl). If the call 401/403s, the facade is fine (it surfaces a clean `upstreamError` envelope — proves AC-8.2 robustness), but the live-verification assertion can't ship green. Two options: (a) skip the liveRead for that category — document the gap in the probe + lessons, ship the router (full verification waits for a higher-scoped PIT); (b) request a higher-scoped PIT before the slice ships.
+- **Check:** QA hat — when a probe assertion fails with a clean `[upstream <category>] 4xx` envelope, the failure is a scope/permissions issue, not a router bug. Router code that produces a clean error envelope on auth failure is *correct* behavior.
+- **Enforcement:** `scripts/probe.ts` has `liveRead` as optional in `CategoryProbe`. Slice 5 ships with location skipped + inline comment explaining why. Re-enable the assertion when a higher-scoped PIT is provisioned.
+- **Last triggered:** 2026-04-26 (slice 5)
+
 ### L-SMO-008 — Composite ship gate raised from 92 to 95
 - **Captured:** 2026-04-26 (post-slice-1)
 - **Trigger:** Slice 1 shipped at composite 9.9 — well above the 9.2 (92/100) gate. CEO directive to lift the bar before slices 2-6 ship: "raise composite score to +95 not 92".
