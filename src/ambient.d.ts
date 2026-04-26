@@ -30,3 +30,11 @@ declare module "ghl-mcp-upstream/dist/tools/calendar-tools.js" {
     executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
   }
 }
+
+declare module "ghl-mcp-upstream/dist/tools/contact-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class ContactTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}

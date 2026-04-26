@@ -27,18 +27,32 @@ export interface JsonSchema {
   additionalProperties?: boolean | JsonSchema;
 }
 
-function paramsSchema(params: readonly ParamDescriptor[]): JsonSchema {
+function paramSchema(p: ParamDescriptor): JsonSchema {
+  if (p.type === "array") {
+    return {
+      type: "array",
+      items: { type: p.items?.type ?? "string" },
+      description: p.description,
+    };
+  }
+  const prop: JsonSchema = { type: p.type, description: p.description };
+  if (p.default !== undefined) prop.default = p.default;
+  return prop;
+}
+
+function paramsSchema(
+  params: readonly ParamDescriptor[],
+  additionalProperties: boolean,
+): JsonSchema {
   const properties: Record<string, JsonSchema> = {};
   const required: string[] = [];
   for (const p of params) {
-    const prop: JsonSchema = { type: p.type, description: p.description };
-    if (p.default !== undefined) prop.default = p.default;
-    properties[p.name] = prop;
+    properties[p.name] = paramSchema(p);
     if (p.required) required.push(p.name);
   }
   const schema: JsonSchema = {
     type: "object",
-    additionalProperties: false,
+    additionalProperties,
     properties,
   };
   if (required.length > 0) schema.required = required;
@@ -47,11 +61,16 @@ function paramsSchema(params: readonly ParamDescriptor[]): JsonSchema {
 
 /**
  * Build the per-router `inputSchema` (one oneOf entry per operation).
+ *
+ * Per-op `additionalProperties: true` (set in operations.ts manifest) loosens
+ * the params object for ops with many GHL-documented optional fields
+ * (create, update, search, etc.) so the manifest doesn't have to enumerate
+ * every one. Default is strict (`false`).
  */
 export function buildRouterSchema(operations: OperationsMap): JsonSchema {
   const oneOf: JsonSchema[] = Object.entries(operations).map(
     ([opName, spec]) => {
-      const ps = paramsSchema(spec.params);
+      const ps = paramsSchema(spec.params, spec.additionalProperties === true);
       const required: string[] = ["operation"];
       const hasRequiredParam = spec.params.some((p) => p.required);
       if (hasRequiredParam) required.push("params");

@@ -2,27 +2,35 @@
  * Operation manifest — single source of truth for router → operation →
  * upstream tool name mapping. Used by:
  *   - schemas/build.ts to generate the oneOf JSON Schema
- *   - routers/calendars.ts to look up the upstream tool name
+ *   - routers/factory.ts to look up the upstream tool name
  *   - routers/help.ts to power list-operations + describe-operation
  *   - scripts/gen-mapping-doc.ts to emit docs/operation-mapping.md
  *
- * Phase 1 vertical slice: only `calendars.reader` is filled in.
- * Other categories are declared as empty stubs so the typing scales
- * without manifest churn when subsequent slices add them.
+ * Per-op `additionalProperties: true` lets ops with many documented optional
+ * fields (create_contact, update_contact, search, etc.) accept any GHL-API
+ * documented field without forcing us to enumerate every one. Required
+ * fields are always explicit. ID-style ops keep additionalProperties: false
+ * by omission (default) for tighter validation.
  */
+
+export type ParamType = "string" | "boolean" | "number" | "array";
 
 export interface ParamDescriptor {
   readonly name: string;
-  readonly type: "string" | "boolean";
+  readonly type: ParamType;
   readonly required: boolean;
-  readonly default?: string | boolean;
+  readonly default?: string | boolean | number;
   readonly description: string;
+  /** Only used when type === "array" */
+  readonly items?: { readonly type: "string" | "boolean" | "number" };
 }
 
 export interface OperationSpec {
   readonly upstream: string;
   readonly description: string;
   readonly params: readonly ParamDescriptor[];
+  /** Default false (strict). Set true for ops with many optional GHL fields. */
+  readonly additionalProperties?: boolean;
 }
 
 export type OperationsMap = Readonly<Record<string, OperationSpec>>;
@@ -45,9 +53,270 @@ export type CategoryName = (typeof ALL_CATEGORIES)[number];
 
 export type Manifest = Readonly<Record<CategoryName, CategoryOps>>;
 
+// ─── Common reusable param descriptors ──────────────────────────────────
+const REQ_CONTACT_ID: ParamDescriptor = {
+  name: "contactId",
+  type: "string",
+  required: true,
+  description: "GHL contact id.",
+};
+const REQ_TASK_ID: ParamDescriptor = {
+  name: "taskId",
+  type: "string",
+  required: true,
+  description: "Task id.",
+};
+const REQ_NOTE_ID: ParamDescriptor = {
+  name: "noteId",
+  type: "string",
+  required: true,
+  description: "Note id.",
+};
+const REQ_TAGS_ARRAY: ParamDescriptor = {
+  name: "tags",
+  type: "array",
+  items: { type: "string" },
+  required: true,
+  description: "Array of tag strings.",
+};
+
 export const operations: Manifest = {
-  contacts: { reader: {}, updater: {} },
+  // ─── contacts ───────────────────────────────────────────────────────
+  contacts: {
+    reader: {
+      search: {
+        upstream: "search_contacts",
+        description:
+          "Search contacts in the location with optional filters (query, pageLimit, etc.). Returns paginated results.",
+        params: [],
+        additionalProperties: true,
+      },
+      get: {
+        upstream: "get_contact",
+        description: "Get a single contact by id.",
+        params: [REQ_CONTACT_ID],
+      },
+      "get-by-business": {
+        upstream: "get_contacts_by_business",
+        description: "List contacts associated with a business id.",
+        params: [
+          {
+            name: "businessId",
+            type: "string",
+            required: true,
+            description: "GHL business id.",
+          },
+        ],
+      },
+      "get-duplicate": {
+        upstream: "get_duplicate_contact",
+        description:
+          "Find a duplicate contact by email or phone in the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-tasks": {
+        upstream: "get_contact_tasks",
+        description: "List tasks attached to a contact.",
+        params: [REQ_CONTACT_ID],
+      },
+      "get-task": {
+        upstream: "get_contact_task",
+        description: "Get a single task by id.",
+        params: [REQ_CONTACT_ID, REQ_TASK_ID],
+      },
+      "list-notes": {
+        upstream: "get_contact_notes",
+        description: "List notes attached to a contact.",
+        params: [REQ_CONTACT_ID],
+      },
+      "get-note": {
+        upstream: "get_contact_note",
+        description: "Get a single note by id.",
+        params: [REQ_CONTACT_ID, REQ_NOTE_ID],
+      },
+      "list-appointments": {
+        upstream: "get_contact_appointments",
+        description: "List appointments attached to a contact.",
+        params: [REQ_CONTACT_ID],
+      },
+    },
+    updater: {
+      create: {
+        upstream: "create_contact",
+        description:
+          "Create a new contact. Many optional fields supported (firstName, lastName, email, phone, tags, customFields, etc.) — see GHL API docs.",
+        params: [],
+        additionalProperties: true,
+      },
+      update: {
+        upstream: "update_contact",
+        description: "Update fields on an existing contact.",
+        params: [REQ_CONTACT_ID],
+        additionalProperties: true,
+      },
+      upsert: {
+        upstream: "upsert_contact",
+        description:
+          "Create-or-update a contact, matching by email or phone. Required matcher fields supplied in payload.",
+        params: [],
+        additionalProperties: true,
+      },
+      delete: {
+        upstream: "delete_contact",
+        description: "Delete a contact by id.",
+        params: [REQ_CONTACT_ID],
+      },
+      "add-tags": {
+        upstream: "add_contact_tags",
+        description: "Add tags to a contact.",
+        params: [REQ_CONTACT_ID, REQ_TAGS_ARRAY],
+      },
+      "remove-tags": {
+        upstream: "remove_contact_tags",
+        description: "Remove tags from a contact.",
+        params: [REQ_CONTACT_ID, REQ_TAGS_ARRAY],
+      },
+      "create-task": {
+        upstream: "create_contact_task",
+        description:
+          "Create a task on a contact. Title required; optional body, dueDate, completed, assignedTo.",
+        params: [
+          REQ_CONTACT_ID,
+          {
+            name: "title",
+            type: "string",
+            required: true,
+            description: "Task title.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "update-task": {
+        upstream: "update_contact_task",
+        description: "Update a task on a contact.",
+        params: [REQ_CONTACT_ID, REQ_TASK_ID],
+        additionalProperties: true,
+      },
+      "delete-task": {
+        upstream: "delete_contact_task",
+        description: "Delete a task from a contact.",
+        params: [REQ_CONTACT_ID, REQ_TASK_ID],
+      },
+      "update-task-completion": {
+        upstream: "update_task_completion",
+        description: "Toggle a task's completion status.",
+        params: [
+          REQ_CONTACT_ID,
+          REQ_TASK_ID,
+          {
+            name: "completed",
+            type: "boolean",
+            required: true,
+            description: "True to mark complete; false to reopen.",
+          },
+        ],
+      },
+      "create-note": {
+        upstream: "create_contact_note",
+        description: "Create a note on a contact.",
+        params: [
+          REQ_CONTACT_ID,
+          {
+            name: "body",
+            type: "string",
+            required: true,
+            description: "Note body text.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "update-note": {
+        upstream: "update_contact_note",
+        description: "Update a note on a contact.",
+        params: [
+          REQ_CONTACT_ID,
+          REQ_NOTE_ID,
+          {
+            name: "body",
+            type: "string",
+            required: true,
+            description: "New note body text.",
+          },
+        ],
+      },
+      "delete-note": {
+        upstream: "delete_contact_note",
+        description: "Delete a note from a contact.",
+        params: [REQ_CONTACT_ID, REQ_NOTE_ID],
+      },
+      "add-to-campaign": {
+        upstream: "add_contact_to_campaign",
+        description: "Add a contact to a campaign.",
+        params: [
+          REQ_CONTACT_ID,
+          {
+            name: "campaignId",
+            type: "string",
+            required: true,
+            description: "Campaign id.",
+          },
+        ],
+      },
+      "remove-from-campaign": {
+        upstream: "remove_contact_from_campaign",
+        description: "Remove a contact from a single campaign.",
+        params: [
+          REQ_CONTACT_ID,
+          {
+            name: "campaignId",
+            type: "string",
+            required: true,
+            description: "Campaign id.",
+          },
+        ],
+      },
+      "remove-from-all-campaigns": {
+        upstream: "remove_contact_from_all_campaigns",
+        description: "Remove a contact from every campaign in the location.",
+        params: [REQ_CONTACT_ID],
+      },
+      "add-to-workflow": {
+        upstream: "add_contact_to_workflow",
+        description:
+          "Add a contact to a workflow. Optional eventStartTime to schedule entry.",
+        params: [
+          REQ_CONTACT_ID,
+          {
+            name: "workflowId",
+            type: "string",
+            required: true,
+            description: "Workflow id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "remove-from-workflow": {
+        upstream: "remove_contact_from_workflow",
+        description: "Remove a contact from a workflow.",
+        params: [
+          REQ_CONTACT_ID,
+          {
+            name: "workflowId",
+            type: "string",
+            required: true,
+            description: "Workflow id.",
+          },
+        ],
+      },
+    },
+  },
+
+  // ─── conversations / opportunities / location / workflow ────────────
+  // Filled in by slices 3-6.
   conversations: { reader: {}, updater: {} },
+
+  // ─── calendars (slice 1) ────────────────────────────────────────────
   calendars: {
     reader: {
       "list-groups": {
@@ -155,6 +424,7 @@ export const operations: Manifest = {
     },
     updater: {},
   },
+
   opportunities: { reader: {}, updater: {} },
   location: { reader: {}, updater: {} },
   workflow: { reader: {}, updater: {} },

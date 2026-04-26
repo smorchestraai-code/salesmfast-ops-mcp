@@ -2,19 +2,23 @@
  * Story 6 probe — integration test for the salesmfast-ops-mcp facade.
  *
  * Spawns dist/server.js over stdio, sends MCP JSON-RPC requests, asserts:
- *   1. tools/list returns 2 entries (default env)
- *   2. ghl-toolkit-help list-categories returns ["calendars"]
- *   3. ghl-calendars-reader list-groups payload contains FKQpu4dGBFauC28DQfSP (live API)
- *   4. invalid params returns InvalidParams mentioning "bogus" (AC-4.2, AC-8.1)
- *   5. unknown operation returns error listing all 6 valid ops (AC-4.3, AC-8.3)
- *   6. env-filter: GHL_TOOL_CATEGORIES=calendars → 2 tools + stderr boot-log line (AC-5.1, AC-5.4)
+ *
+ *   PER-CATEGORY (data-driven loop over CATEGORY_PROBES):
+ *     - tools/list contains every expected router name
+ *     - ghl-toolkit-help list-categories returns the active set
+ *     - for each category with a live-read entry: that call returns a
+ *       payload containing the expected fragment (real ID from BRD §10)
+ *
+ *   NEGATIVE (calendars-reader as representative):
+ *     - invalid params → InvalidParams mentioning "bogus" (AC-4.2, AC-8.1)
+ *     - unknown operation → MethodNotFound listing 6 valid ops (AC-4.3, AC-8.3)
+ *
+ *   ENV-FILTER (separate server instance with GHL_TOOL_CATEGORIES=calendars):
+ *     - tools/list returns exactly calendars-reader + help
+ *     - stderr boot-log line matches verbatim format (AC-5.1, AC-5.4)
  *
  * Run via: `npm run probe` (which is `tsx scripts/probe.ts`).
  * Exit 0 = all assertions pass. Exit 1 = any failure.
- *
- * Why raw stdio instead of the MCP SDK client: the probe is the test artifact
- * for Phase 1; reading the transport directly gives full visibility into
- * stderr capture (assertion 6) and JSON-RPC error shapes (assertions 4, 5).
  */
 
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
@@ -29,9 +33,16 @@ const SERVER_PATH = resolve(PROJECT_ROOT, "dist/server.js");
 const REQUEST_TIMEOUT_MS = 30_000;
 const PROTOCOL_VERSION = "2024-11-05";
 
-const EXPECTED_LIVE_GROUP_ID = "FKQpu4dGBFauC28DQfSP";
+// ─── Live-data fixtures (BRD §10.3 + 2026-04-26 capture) ────────────────
+const EXPECTED_LIVE_GROUP_ID = "FKQpu4dGBFauC28DQfSP"; // calendars list-groups
+const EXPECTED_CONTACT_ID = "uHDvdJ5uiaX2TAwa9LH9"; //   contacts search
+
 const EXPECTED_BOOT_LOG_PREFIX = "[salesmfast-ops] active_categories=";
-const EXPECTED_VALID_OPS = [
+
+// Negative-test fixture (calendars-reader stays as the representative since
+// every router uses the same factory and same handler order).
+const NEGATIVE_TEST_ROUTER = "ghl-calendars-reader";
+const NEGATIVE_TEST_VALID_OPS = [
   "list-groups",
   "list",
   "get",
@@ -40,6 +51,53 @@ const EXPECTED_VALID_OPS = [
   "get-appointment",
 ];
 
+// ─── Per-category probes ────────────────────────────────────────────────
+interface CategoryProbe {
+  readonly category: string;
+  readonly expectedRouters: readonly string[];
+  readonly liveRead?: {
+    readonly router: string;
+    readonly operation: string;
+    readonly params?: Record<string, unknown>;
+    readonly expectFragment: string;
+    readonly label: string;
+  };
+}
+
+// Order matches operations.ts ALL_CATEGORIES (which drives help.list-categories).
+const CATEGORY_PROBES: readonly CategoryProbe[] = [
+  {
+    category: "contacts",
+    expectedRouters: ["ghl-contacts-reader", "ghl-contacts-updater"],
+    liveRead: {
+      router: "ghl-contacts-reader",
+      operation: "search",
+      expectFragment: EXPECTED_CONTACT_ID,
+      label: `ghl-contacts-reader search returned ${EXPECTED_CONTACT_ID}`,
+    },
+  },
+  {
+    category: "calendars",
+    expectedRouters: ["ghl-calendars-reader"],
+    liveRead: {
+      router: "ghl-calendars-reader",
+      operation: "list-groups",
+      expectFragment: EXPECTED_LIVE_GROUP_ID,
+      label: `ghl-calendars-reader list-groups returned ${EXPECTED_LIVE_GROUP_ID}`,
+    },
+  },
+];
+
+const ALL_EXPECTED_ROUTERS: readonly string[] = [
+  "ghl-toolkit-help",
+  ...CATEGORY_PROBES.flatMap((c) => c.expectedRouters),
+].sort();
+
+const ALL_EXPECTED_CATEGORIES: readonly string[] = CATEGORY_PROBES.map(
+  (c) => c.category,
+);
+
+// ─── JSON-RPC types + minimal stdio MCP client ──────────────────────────
 type JsonRpcId = number | string;
 interface JsonRpcRequest {
   jsonrpc: "2.0";
@@ -90,7 +148,6 @@ class McpStdioClient {
     this.proc.stdout.on("data", (chunk: Buffer) => this.handleChunk(chunk));
     this.proc.on("exit", () => {
       this.exited = true;
-      // reject any pending requests
       for (const [, { reject, timeout }] of this.pending) {
         clearTimeout(timeout);
         reject(new Error("server process exited before response"));
@@ -178,6 +235,7 @@ class McpStdioClient {
   }
 }
 
+// ─── Assertion plumbing ─────────────────────────────────────────────────
 interface AssertionResult {
   name: string;
   ok: boolean;
@@ -201,10 +259,11 @@ async function expectThrow<T>(p: Promise<T>): Promise<Error> {
   }
 }
 
+// ─── Main probe sequence ────────────────────────────────────────────────
 async function main(): Promise<void> {
   if (!existsSync(SERVER_PATH)) {
     record(
-      "tools/list returned 2 tools (default env)",
+      `tools/list returned ${ALL_EXPECTED_ROUTERS.length} tools (default env)`,
       false,
       `dist/server.js not found at ${SERVER_PATH} — run \`npm run build\` first`,
     );
@@ -212,29 +271,29 @@ async function main(): Promise<void> {
     return;
   }
 
-  // ─── Server A: default env (no GHL_TOOL_CATEGORIES set) ───
+  // ─── Server A: default env (no GHL_TOOL_CATEGORIES set) ────────────
   const a = new McpStdioClient({});
   try {
     await a.initialize();
 
-    // Assertion 1
+    // Assertion: tools/list returns the union of all expected routers
     {
       const result = (await a.request("tools/list", {})) as {
         tools: { name: string }[];
       };
       const names = result.tools.map((t) => t.name).sort();
-      const expected = ["ghl-calendars-reader", "ghl-toolkit-help"].sort();
+      const expected = [...ALL_EXPECTED_ROUTERS];
       const ok =
         names.length === expected.length &&
         names.every((n, i) => n === expected[i]);
       record(
-        "tools/list returned 2 tools (default env)",
+        `tools/list returned ${expected.length} tools (default env)`,
         ok,
         `got [${names.join(", ")}]`,
       );
     }
 
-    // Assertion 2
+    // Assertion: help list-categories matches the active set
     {
       const result = (await a.request("tools/call", {
         name: "ghl-toolkit-help",
@@ -247,39 +306,58 @@ async function main(): Promise<void> {
       } catch {
         parsed = text;
       }
+      const expected = [...ALL_EXPECTED_CATEGORIES];
       const ok =
         Array.isArray(parsed) &&
-        parsed.length === 1 &&
-        parsed[0] === "calendars";
+        parsed.length === expected.length &&
+        expected.every((c) => (parsed as unknown[]).includes(c));
       record(
-        'ghl-toolkit-help list-categories returned ["calendars"]',
+        `ghl-toolkit-help list-categories returned ${JSON.stringify(expected)}`,
         ok,
         `got ${JSON.stringify(parsed)}`,
       );
     }
 
-    // Assertion 3 — LIVE API CALL
-    {
-      const result = (await a.request("tools/call", {
-        name: "ghl-calendars-reader",
-        arguments: { selectSchema: { operation: "list-groups" } },
-      })) as { content: { type: string; text: string }[]; isError?: boolean };
-      const text = result.content?.[0]?.text ?? "";
-      const ok = !result.isError && text.includes(EXPECTED_LIVE_GROUP_ID);
-      record(
-        `ghl-calendars-reader list-groups returned ${EXPECTED_LIVE_GROUP_ID}`,
-        ok,
-        ok
-          ? "live data round-trip ok"
-          : `payload missing id; first 200 chars: ${text.slice(0, 200)}`,
-      );
+    // Per-category live reads (data-driven)
+    for (const cat of CATEGORY_PROBES) {
+      if (!cat.liveRead) continue;
+      const lr = cat.liveRead;
+      const args: Record<string, unknown> = {
+        selectSchema: { operation: lr.operation },
+      };
+      if (lr.params !== undefined) {
+        (args.selectSchema as Record<string, unknown>).params = lr.params;
+      }
+      try {
+        const result = (await a.request("tools/call", {
+          name: lr.router,
+          arguments: args,
+        })) as {
+          content: { type: string; text: string }[];
+          isError?: boolean;
+        };
+        const text = result.content?.[0]?.text ?? "";
+        const ok = !result.isError && text.includes(lr.expectFragment);
+        record(
+          lr.label,
+          ok,
+          ok
+            ? "live data round-trip ok"
+            : `payload missing fragment "${lr.expectFragment}"; first 200 chars: ${text.slice(
+                0,
+                200,
+              )}`,
+        );
+      } catch (e) {
+        record(lr.label, false, `threw: ${(e as Error).message.slice(0, 200)}`);
+      }
     }
 
-    // Assertion 4 — invalid params (AC-4.2, AC-8.1)
+    // Negative — invalid params (AC-4.2, AC-8.1) — calendars-reader as representative
     {
       const err = await expectThrow(
         a.request("tools/call", {
-          name: "ghl-calendars-reader",
+          name: NEGATIVE_TEST_ROUTER,
           arguments: {
             selectSchema: { operation: "list-groups", params: { bogus: 1 } },
           },
@@ -297,30 +375,30 @@ async function main(): Promise<void> {
       );
     }
 
-    // Assertion 5 — unknown op (AC-4.3, AC-8.3)
+    // Negative — unknown op (AC-4.3, AC-8.3)
     {
       const err = await expectThrow(
         a.request("tools/call", {
-          name: "ghl-calendars-reader",
+          name: NEGATIVE_TEST_ROUTER,
           arguments: { selectSchema: { operation: "fly-to-the-moon" } },
         }),
       );
       const msg = err.message;
-      const missing = EXPECTED_VALID_OPS.filter((op) => !msg.includes(op));
+      const missing = NEGATIVE_TEST_VALID_OPS.filter((op) => !msg.includes(op));
       const ok = missing.length === 0;
       record(
-        "unknown operation returned MethodNotFound listing 6 ops",
+        `unknown operation returned MethodNotFound listing ${NEGATIVE_TEST_VALID_OPS.length} ops`,
         ok,
         ok
-          ? "all 6 valid ops listed"
-          : `missing from error message: ${missing.join(", ")}; got: ${msg.slice(0, 200)}`,
+          ? "all valid ops listed"
+          : `missing: ${missing.join(", ")}; got: ${msg.slice(0, 200)}`,
       );
     }
   } finally {
     await a.close();
   }
 
-  // ─── Server B: GHL_TOOL_CATEGORIES=calendars (env-filter assertion) ───
+  // ─── Server B: GHL_TOOL_CATEGORIES=calendars (env-filter assertion) ─
   const b = new McpStdioClient({ GHL_TOOL_CATEGORIES: "calendars" });
   try {
     await b.initialize();
@@ -338,7 +416,10 @@ async function main(): Promise<void> {
       toolsOk && stderrOk,
       toolsOk && stderrOk
         ? "tools=2, stderr ok"
-        : `tools=[${names.join(", ")}], stderrHasPrefix=${stderrOk}; stderr first 300: ${b.stderr.slice(0, 300)}`,
+        : `tools=[${names.join(", ")}], stderrHasPrefix=${stderrOk}; stderr first 300: ${b.stderr.slice(
+            0,
+            300,
+          )}`,
     );
   } finally {
     await b.close();

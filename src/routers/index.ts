@@ -17,6 +17,7 @@ import {
   type CategoryName,
 } from "../operations.js";
 import { createCalendarsReader } from "./calendars.js";
+import { createContactsReader, createContactsUpdater } from "./contacts.js";
 import { createHelp } from "./help.js";
 import type { RouterDef } from "./types.js";
 
@@ -39,15 +40,30 @@ export function buildRouters(
           (ALL_CATEGORIES as readonly string[]).includes(c),
         );
 
-  // Filter to categories that actually have a Phase 1 reader implementation
-  const activeCategories = requested.filter(
-    (c) => Object.keys(operations[c].reader).length > 0,
-  );
+  // A category is "active" if it has at least one reader OR updater op in
+  // the manifest. (Empty-stub categories from operations.ts get filtered.)
+  const activeCategories = requested.filter((c) => {
+    const r = Object.keys(operations[c].reader).length;
+    const u = Object.keys(operations[c].updater).length;
+    return r > 0 || u > 0;
+  });
 
   const routers: RouterDef[] = [];
 
-  if (activeCategories.includes("calendars")) {
+  if (
+    activeCategories.includes("calendars") &&
+    Object.keys(operations.calendars.reader).length > 0
+  ) {
     routers.push(createCalendarsReader(upstream, env.deniedOps));
+  }
+
+  if (activeCategories.includes("contacts")) {
+    if (Object.keys(operations.contacts.reader).length > 0) {
+      routers.push(createContactsReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.contacts.updater).length > 0) {
+      routers.push(createContactsUpdater(upstream, env.deniedOps));
+    }
   }
 
   // Help is always registered, even if no other category is active
