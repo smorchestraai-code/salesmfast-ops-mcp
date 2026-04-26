@@ -2,7 +2,9 @@
 
 Facade-router MCP server. Wraps the upstream 280-tool [GoHighLevel-MCP](../GoHighLevel-MCP) as 13 category-level routers, sized to fit under host tool caps (~128 tools per session).
 
-**Phase 1 vertical slice (this build):** ships `ghl-calendars-reader` (6 operations) + `ghl-toolkit-help`. Cap thesis proven: with `GHL_TOOL_CATEGORIES=calendars`, exactly 2 tools register on the host instead of ~280.
+**Phase 1 status:** ✅ all 10 BRD stories closed (see [`STATUS.md`](./STATUS.md)). Ships **12 routers + `ghl-toolkit-help` = 13 facade tools** for **80 operations**. Cap thesis proven: with `GHL_TOOL_CATEGORIES=all`, exactly 13 tools register on the host instead of upstream's ~280.
+
+**Migrating from upstream `ghl-mcp`?** Read [`docs/MIGRATION.md`](./docs/MIGRATION.md) — three-step host swap + the full old-name → new-router/operation mapping table.
 
 See [`BRD.md`](./BRD.md) for the full requirements and [`CLAUDE.md`](./CLAUDE.md) for the agent on-ramp.
 
@@ -71,7 +73,8 @@ Comment out the existing `ghl-mcp` block so the host loads only this server. Res
 | Command | Effect |
 |---------|--------|
 | `npm run build` | Runs `prebuild` (regenerates `docs/operation-mapping.md`) then `tsc`. Emits `dist/`. |
-| `npm run probe` | 6-assertion stdio JSON-RPC integration test (live GHL API). Exit 0 = green. |
+| `npm run probe` | 10-assertion stdio JSON-RPC integration test (live GHL API, read-only). Exit 0 = green. |
+| `npm run probe:write` | **Opt-in** AC-6.4 round-trip: creates a real GHL contact → gets it back → deletes it. NOT in CI default — mutates upstream state. |
 | `npm run docs:mapping` | Regenerates the operation mapping doc on its own. |
 | `npm run lint` | `tsc -p tsconfig.scripts.json` — type-checks `src/` + `scripts/` (no emit). |
 | `npm run start` | `node dist/server.js` — boots the MCP server over stdio. |
