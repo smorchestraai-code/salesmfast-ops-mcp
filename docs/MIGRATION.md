@@ -294,6 +294,40 @@ Every old tool name maps to one operation under one router. The router's input i
 
 **After slice 9: 181 upstream tool names → 28 routers + 184 operations**. 29 facade tools registered on the host.
 
+#### Slice 10 — Custom Data (added 2026-04-26, tag `v0.3.3-slice-10-custom-data`)
+
+| Old (`mcp__ghl-mcp__<name>`) | New router | New operation |
+|---|---|---|
+| `ghl_get_custom_field_by_id` | `ghl-custom-field-v2-reader` | `get-by-id` |
+| `ghl_get_custom_fields_by_object_key` | `ghl-custom-field-v2-reader` | `get-by-object-key` |
+| `ghl_create_custom_field` | `ghl-custom-field-v2-updater` | `create-field` |
+| `ghl_update_custom_field` | `ghl-custom-field-v2-updater` | `update-field` |
+| `ghl_delete_custom_field` | `ghl-custom-field-v2-updater` | `delete-field` |
+| `ghl_create_custom_field_folder` | `ghl-custom-field-v2-updater` | `create-folder` |
+| `ghl_update_custom_field_folder` | `ghl-custom-field-v2-updater` | `update-folder` |
+| `ghl_delete_custom_field_folder` | `ghl-custom-field-v2-updater` | `delete-folder` |
+| `get_all_objects` | `ghl-object-reader` | `list` |
+| `get_object_schema` | `ghl-object-reader` | `get-schema` |
+| `get_object_record` | `ghl-object-reader` | `get-record` |
+| `search_object_records` | `ghl-object-reader` | `search-records` |
+| `create_object_schema` | `ghl-object-updater` | `create-schema` |
+| `update_object_schema` | `ghl-object-updater` | `update-schema` |
+| `create_object_record` | `ghl-object-updater` | `create-record` |
+| `update_object_record` | `ghl-object-updater` | `update-record` |
+| `delete_object_record` | `ghl-object-updater` | `delete-record` |
+| `ghl_get_all_associations` | `ghl-association-reader` | `list` |
+| `ghl_get_association_by_id` | `ghl-association-reader` | `get-by-id` |
+| `ghl_get_association_by_key` | `ghl-association-reader` | `get-by-key` |
+| `ghl_get_association_by_object_key` | `ghl-association-reader` | `get-by-object-key` |
+| `ghl_get_relations_by_record` | `ghl-association-reader` | `get-relations-by-record` |
+| `ghl_create_association` | `ghl-association-updater` | `create-association` |
+| `ghl_update_association` | `ghl-association-updater` | `update-association` |
+| `ghl_delete_association` | `ghl-association-updater` | `delete-association` |
+| `ghl_create_relation` | `ghl-association-updater` | `create-relation` |
+| `ghl_delete_relation` | `ghl-association-updater` | `delete-relation` |
+
+**After slice 10: 208 upstream tool names → 34 routers + 211 operations**. 35 facade tools. **All 19 upstream tool classes wrapped (100% class coverage).** Phase 2 still has slice 11 (cleanup of missed ops in Phase 1 categories) to add the final ~48 ops.
+
 ### Worked example
 
 **Old call:**

@@ -59,6 +59,10 @@ export const ALL_CATEGORIES = [
   // ─── Slice 9 (Content) ────
   "blog",
   "media",
+  // ─── Slice 10 (Custom Data) ────
+  "custom-field-v2",
+  "object",
+  "association",
 ] as const;
 
 export type CategoryName = (typeof ALL_CATEGORIES)[number];
@@ -1901,6 +1905,316 @@ export const operations: Manifest = {
             type: "string",
             required: true,
             description: "Media file id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  // ─── Slice 10 (Custom Data) ───────────────────────────────────────────
+  "custom-field-v2": {
+    reader: {
+      "get-by-id": {
+        upstream: "ghl_get_custom_field_by_id",
+        description: "Get a custom field definition by id.",
+        params: [
+          {
+            name: "fieldId",
+            type: "string",
+            required: true,
+            description: "Custom field id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "get-by-object-key": {
+        upstream: "ghl_get_custom_fields_by_object_key",
+        description:
+          "List all custom fields defined for a custom object (e.g., Company).",
+        params: [
+          {
+            name: "objectKey",
+            type: "string",
+            required: true,
+            description: "Custom object key (e.g., 'Company').",
+          },
+        ],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      "create-field": {
+        upstream: "ghl_create_custom_field",
+        description: "Create a new custom field.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-field": {
+        upstream: "ghl_update_custom_field",
+        description: "Update an existing custom field.",
+        params: [
+          {
+            name: "fieldId",
+            type: "string",
+            required: true,
+            description: "Custom field id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-field": {
+        upstream: "ghl_delete_custom_field",
+        description: "Delete a custom field by id.",
+        params: [
+          {
+            name: "fieldId",
+            type: "string",
+            required: true,
+            description: "Custom field id.",
+          },
+        ],
+      },
+      "create-folder": {
+        upstream: "ghl_create_custom_field_folder",
+        description: "Create a custom field folder.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-folder": {
+        upstream: "ghl_update_custom_field_folder",
+        description: "Update an existing custom field folder.",
+        params: [
+          {
+            name: "folderId",
+            type: "string",
+            required: true,
+            description: "Custom field folder id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-folder": {
+        upstream: "ghl_delete_custom_field_folder",
+        description: "Delete a custom field folder by id.",
+        params: [
+          {
+            name: "folderId",
+            type: "string",
+            required: true,
+            description: "Custom field folder id.",
+          },
+        ],
+      },
+    },
+  },
+
+  object: {
+    reader: {
+      list: {
+        upstream: "get_all_objects",
+        description: "List all custom object schemas defined for the location.",
+        params: [],
+      },
+      "get-schema": {
+        upstream: "get_object_schema",
+        description: "Get a single custom object schema by id.",
+        params: [
+          {
+            name: "schemaId",
+            type: "string",
+            required: true,
+            description: "Custom object schema id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "get-record": {
+        upstream: "get_object_record",
+        description: "Get a single custom object record by id.",
+        params: [
+          {
+            name: "recordId",
+            type: "string",
+            required: true,
+            description: "Custom object record id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "search-records": {
+        upstream: "search_object_records",
+        description: "Search custom object records with optional filters.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      "create-schema": {
+        upstream: "create_object_schema",
+        description: "Create a new custom object schema.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-schema": {
+        upstream: "update_object_schema",
+        description: "Update an existing custom object schema.",
+        params: [
+          {
+            name: "schemaId",
+            type: "string",
+            required: true,
+            description: "Custom object schema id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "create-record": {
+        upstream: "create_object_record",
+        description: "Create a new custom object record.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-record": {
+        upstream: "update_object_record",
+        description: "Update an existing custom object record.",
+        params: [
+          {
+            name: "recordId",
+            type: "string",
+            required: true,
+            description: "Custom object record id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-record": {
+        upstream: "delete_object_record",
+        description: "Delete a custom object record by id.",
+        params: [
+          {
+            name: "recordId",
+            type: "string",
+            required: true,
+            description: "Custom object record id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  association: {
+    reader: {
+      list: {
+        upstream: "ghl_get_all_associations",
+        description:
+          "List all associations (custom-object relationship definitions) for the location.",
+        params: [],
+      },
+      "get-by-id": {
+        upstream: "ghl_get_association_by_id",
+        description: "Get a single association by id.",
+        params: [
+          {
+            name: "associationId",
+            type: "string",
+            required: true,
+            description: "Association id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "get-by-key": {
+        upstream: "ghl_get_association_by_key",
+        description: "Get an association by its key.",
+        params: [
+          {
+            name: "key",
+            type: "string",
+            required: true,
+            description: "Association key.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "get-by-object-key": {
+        upstream: "ghl_get_association_by_object_key",
+        description:
+          "Get associations defined for a specific custom-object key.",
+        params: [
+          {
+            name: "objectKey",
+            type: "string",
+            required: true,
+            description: "Custom object key.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "get-relations-by-record": {
+        upstream: "ghl_get_relations_by_record",
+        description:
+          "List relations (record-to-record links) for a single record.",
+        params: [
+          {
+            name: "recordId",
+            type: "string",
+            required: true,
+            description: "Custom object record id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      "create-association": {
+        upstream: "ghl_create_association",
+        description: "Create a new association definition.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-association": {
+        upstream: "ghl_update_association",
+        description: "Update an existing association definition.",
+        params: [
+          {
+            name: "associationId",
+            type: "string",
+            required: true,
+            description: "Association id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-association": {
+        upstream: "ghl_delete_association",
+        description: "Delete an association definition by id.",
+        params: [
+          {
+            name: "associationId",
+            type: "string",
+            required: true,
+            description: "Association id.",
+          },
+        ],
+      },
+      "create-relation": {
+        upstream: "ghl_create_relation",
+        description:
+          "Create a relation (record-to-record link via an association).",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-relation": {
+        upstream: "ghl_delete_relation",
+        description: "Delete a relation by id.",
+        params: [
+          {
+            name: "relationId",
+            type: "string",
+            required: true,
+            description: "Relation id.",
           },
         ],
         additionalProperties: true,

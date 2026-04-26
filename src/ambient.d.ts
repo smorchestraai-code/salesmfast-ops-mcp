@@ -193,3 +193,41 @@ declare module "ghl-mcp-upstream/dist/tools/media-tools.js" {
     executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
   }
 }
+
+// ─── Slice 10 (Custom Data) ─────────────────────────────────────────────
+
+declare module "ghl-mcp-upstream/dist/tools/custom-field-v2-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class CustomFieldV2Tools {
+    constructor(client: GHLApiClient);
+    /**
+     * NOTE: CustomFieldV2Tools uses `executeCustomFieldV2Tool` (quirk).
+     */
+    executeCustomFieldV2Tool(
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/object-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class ObjectTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/association-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class AssociationTools {
+    constructor(client: GHLApiClient);
+    /**
+     * NOTE: AssociationTools uses `executeAssociationTool` (quirk).
+     */
+    executeAssociationTool(
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<unknown>;
+  }
+}

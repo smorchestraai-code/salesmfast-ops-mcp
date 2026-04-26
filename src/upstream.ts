@@ -29,6 +29,10 @@ import { StoreTools } from "ghl-mcp-upstream/dist/tools/store-tools.js";
 // ─── Slice 9 (Content) ───
 import { BlogTools } from "ghl-mcp-upstream/dist/tools/blog-tools.js";
 import { MediaTools } from "ghl-mcp-upstream/dist/tools/media-tools.js";
+// ─── Slice 10 (Custom Data) ───
+import { CustomFieldV2Tools } from "ghl-mcp-upstream/dist/tools/custom-field-v2-tools.js";
+import { ObjectTools } from "ghl-mcp-upstream/dist/tools/object-tools.js";
+import { AssociationTools } from "ghl-mcp-upstream/dist/tools/association-tools.js";
 import type { ParsedEnv } from "./env.js";
 
 const GHL_API_VERSION = "2021-07-28";
@@ -53,6 +57,10 @@ export interface Upstream {
   // ─── Slice 9 ───
   readonly blogTools: BlogTools;
   readonly mediaTools: MediaTools;
+  // ─── Slice 10 ───
+  readonly customFieldV2Tools: CustomFieldV2Tools;
+  readonly objectTools: ObjectTools;
+  readonly associationTools: AssociationTools;
 }
 
 export function createUpstream(env: ParsedEnv): Upstream {
@@ -79,5 +87,8 @@ export function createUpstream(env: ParsedEnv): Upstream {
     storeTools: new StoreTools(client),
     blogTools: new BlogTools(client),
     mediaTools: new MediaTools(client),
+    customFieldV2Tools: new CustomFieldV2Tools(client),
+    objectTools: new ObjectTools(client),
+    associationTools: new AssociationTools(client),
   };
 }
