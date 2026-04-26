@@ -86,13 +86,33 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `list-free-slots` | `get_free_slots` | List free slots in a calendar for a date range. |
 | `get-appointment` | `get_appointment` | Get a single appointment by id. |
 
+## opportunities
+
+### `ghl-opportunities-reader` (3 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `search` | `search_opportunities` | Search opportunities in the location with optional filters (pipelineId, status, contactId, etc.). Returns paginated results. |
+| `get` | `get_opportunity` | Get a single opportunity by id. |
+| `list-pipelines` | `get_pipelines` | List all pipelines and stages in the location. |
+
+### `ghl-opportunities-updater` (5 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create` | `create_opportunity` | Create a new opportunity in a pipeline stage. Required: pipelineId + name (typically) — see GHL API docs. |
+| `update` | `update_opportunity` | Update fields on an existing opportunity. |
+| `update-status` | `update_opportunity_status` | Update an opportunity's status (open / won / lost / abandoned). |
+| `upsert` | `upsert_opportunity` | Create-or-update an opportunity, matching by external id or fields. |
+| `delete` | `delete_opportunity` | Delete an opportunity by id. |
+
 ---
 
 ## Totals
 
-- Reader operations: **21**
-- Updater operations: **27**
-- Total: **48**
+- Reader operations: **24**
+- Updater operations: **32**
+- Total: **56**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.

@@ -37,6 +37,7 @@ const PROTOCOL_VERSION = "2024-11-05";
 const EXPECTED_LIVE_GROUP_ID = "FKQpu4dGBFauC28DQfSP"; //    calendars list-groups
 const EXPECTED_CONTACT_ID = "uHDvdJ5uiaX2TAwa9LH9"; //       contacts search
 const EXPECTED_CONVERSATION_ID = "Bh1aXpcKJOmhEMw1UeZa"; //  conversations search
+const EXPECTED_PIPELINE_ID = "Zf2Lv61fAmm4JliTRsxI"; //      opportunities list-pipelines (CLAUDE.md baseline)
 
 const EXPECTED_BOOT_LOG_PREFIX = "[salesmfast-ops] active_categories=";
 
@@ -95,6 +96,16 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
       operation: "list-groups",
       expectFragment: EXPECTED_LIVE_GROUP_ID,
       label: `ghl-calendars-reader list-groups returned ${EXPECTED_LIVE_GROUP_ID}`,
+    },
+  },
+  {
+    category: "opportunities",
+    expectedRouters: ["ghl-opportunities-reader", "ghl-opportunities-updater"],
+    liveRead: {
+      router: "ghl-opportunities-reader",
+      operation: "list-pipelines",
+      expectFragment: EXPECTED_PIPELINE_ID,
+      label: `ghl-opportunities-reader list-pipelines returned ${EXPECTED_PIPELINE_ID}`,
     },
   },
 ];

@@ -22,6 +22,10 @@ import {
   createConversationsReader,
   createConversationsUpdater,
 } from "./conversations.js";
+import {
+  createOpportunitiesReader,
+  createOpportunitiesUpdater,
+} from "./opportunities.js";
 import { createHelp } from "./help.js";
 import type { RouterDef } from "./types.js";
 
@@ -76,6 +80,15 @@ export function buildRouters(
     }
     if (Object.keys(operations.conversations.updater).length > 0) {
       routers.push(createConversationsUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("opportunities")) {
+    if (Object.keys(operations.opportunities.reader).length > 0) {
+      routers.push(createOpportunitiesReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.opportunities.updater).length > 0) {
+      routers.push(createOpportunitiesUpdater(upstream, env.deniedOps));
     }
   }
 

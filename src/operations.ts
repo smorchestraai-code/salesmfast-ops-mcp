@@ -624,7 +624,94 @@ export const operations: Manifest = {
     updater: {},
   },
 
-  opportunities: { reader: {}, updater: {} },
+  opportunities: {
+    reader: {
+      search: {
+        upstream: "search_opportunities",
+        description:
+          "Search opportunities in the location with optional filters (pipelineId, status, contactId, etc.). Returns paginated results.",
+        params: [],
+        additionalProperties: true,
+      },
+      get: {
+        upstream: "get_opportunity",
+        description: "Get a single opportunity by id.",
+        params: [
+          {
+            name: "opportunityId",
+            type: "string",
+            required: true,
+            description: "Opportunity id.",
+          },
+        ],
+      },
+      "list-pipelines": {
+        upstream: "get_pipelines",
+        description: "List all pipelines and stages in the location.",
+        params: [],
+      },
+    },
+    updater: {
+      create: {
+        upstream: "create_opportunity",
+        description:
+          "Create a new opportunity in a pipeline stage. Required: pipelineId + name (typically) — see GHL API docs.",
+        params: [],
+        additionalProperties: true,
+      },
+      update: {
+        upstream: "update_opportunity",
+        description: "Update fields on an existing opportunity.",
+        params: [
+          {
+            name: "opportunityId",
+            type: "string",
+            required: true,
+            description: "Opportunity id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "update-status": {
+        upstream: "update_opportunity_status",
+        description:
+          "Update an opportunity's status (open / won / lost / abandoned).",
+        params: [
+          {
+            name: "opportunityId",
+            type: "string",
+            required: true,
+            description: "Opportunity id.",
+          },
+          {
+            name: "status",
+            type: "string",
+            required: true,
+            description: "New status (open, won, lost, abandoned).",
+          },
+        ],
+      },
+      upsert: {
+        upstream: "upsert_opportunity",
+        description:
+          "Create-or-update an opportunity, matching by external id or fields.",
+        params: [],
+        additionalProperties: true,
+      },
+      delete: {
+        upstream: "delete_opportunity",
+        description: "Delete an opportunity by id.",
+        params: [
+          {
+            name: "opportunityId",
+            type: "string",
+            required: true,
+            description: "Opportunity id.",
+          },
+        ],
+      },
+    },
+  },
   location: { reader: {}, updater: {} },
   workflow: { reader: {}, updater: {} },
 } as const;
