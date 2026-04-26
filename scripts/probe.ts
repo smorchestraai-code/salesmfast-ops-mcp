@@ -40,6 +40,16 @@ const EXPECTED_PIPELINE_ID = "Zf2Lv61fAmm4JliTRsxI"; //      opportunities list-
 
 const EXPECTED_WORKFLOW_ID = "8c0aed9f-db60-437f-9127-2a67d7b8620b"; // workflow list (Funnel Engineering, captured 2026-04-26)
 
+// Slice 7 (GTM) live-data fixtures — preflight-verified 2026-04-26
+const EXPECTED_EMAIL_TEMPLATE_NAME = "weekly email test"; //  email get-templates (template name in builders[])
+const EXPECTED_SURVEY_ID = "7stMLpd9UTdEviokFW7y"; //         survey list ("score card")
+// social: no specific id fixture — accounts list can be empty for new locations.
+//   Assertion checks for the "accounts" envelope key.
+const EXPECTED_SOCIAL_ENVELOPE_KEY = '"accounts"';
+// invoice: no specific id fixture for the dev location — assertion checks the
+//   "invoices" envelope key (or "data" for some upstream shapes).
+const EXPECTED_INVOICE_ENVELOPE_KEY = "invoices";
+
 // Negative-test fixture (calendars-reader stays as the representative since
 // every router uses the same factory and same handler order).
 const NEGATIVE_TEST_ROUTER = "ghl-calendars-reader";
@@ -105,6 +115,47 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
       operation: "list-pipelines",
       expectFragment: EXPECTED_PIPELINE_ID,
       label: `ghl-opportunities-reader list-pipelines returned ${EXPECTED_PIPELINE_ID}`,
+    },
+  },
+  // ─── Slice 7 (GTM) ────────────────────────────────────────────────────
+  {
+    category: "email",
+    expectedRouters: ["ghl-email-reader", "ghl-email-updater"],
+    liveRead: {
+      router: "ghl-email-reader",
+      operation: "get-templates",
+      expectFragment: EXPECTED_EMAIL_TEMPLATE_NAME,
+      label: `ghl-email-reader get-templates includes "${EXPECTED_EMAIL_TEMPLATE_NAME}"`,
+    },
+  },
+  {
+    category: "social-media",
+    expectedRouters: ["ghl-social-reader", "ghl-social-updater"],
+    liveRead: {
+      router: "ghl-social-reader",
+      operation: "get-accounts",
+      expectFragment: EXPECTED_SOCIAL_ENVELOPE_KEY,
+      label: `ghl-social-reader get-accounts returns "accounts" envelope`,
+    },
+  },
+  {
+    category: "survey",
+    expectedRouters: ["ghl-survey-reader"],
+    liveRead: {
+      router: "ghl-survey-reader",
+      operation: "list",
+      expectFragment: EXPECTED_SURVEY_ID,
+      label: `ghl-survey-reader list returned ${EXPECTED_SURVEY_ID}`,
+    },
+  },
+  {
+    category: "invoice",
+    expectedRouters: ["ghl-invoice-reader", "ghl-invoice-updater"],
+    liveRead: {
+      router: "ghl-invoice-reader",
+      operation: "list",
+      expectFragment: EXPECTED_INVOICE_ENVELOPE_KEY,
+      label: `ghl-invoice-reader list returns "invoices" envelope`,
     },
   },
   {

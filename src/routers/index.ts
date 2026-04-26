@@ -28,6 +28,11 @@ import {
   createOpportunitiesUpdater,
 } from "./opportunities.js";
 import { createWorkflowReader } from "./workflow.js";
+// ─── Slice 7 (GTM) ───
+import { createSocialReader, createSocialUpdater } from "./social.js";
+import { createEmailReader, createEmailUpdater } from "./email.js";
+import { createSurveyReader } from "./survey.js";
+import { createInvoiceReader, createInvoiceUpdater } from "./invoice.js";
 import { createHelp } from "./help.js";
 import type { RouterDef } from "./types.js";
 
@@ -110,6 +115,41 @@ export function buildRouters(
     Object.keys(operations.workflow.reader).length > 0
   ) {
     routers.push(createWorkflowReader(upstream, env.deniedOps));
+  }
+
+  // ─── Slice 7 (GTM) ────
+  if (activeCategories.includes("social-media")) {
+    if (Object.keys(operations["social-media"].reader).length > 0) {
+      routers.push(createSocialReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations["social-media"].updater).length > 0) {
+      routers.push(createSocialUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("email")) {
+    if (Object.keys(operations.email.reader).length > 0) {
+      routers.push(createEmailReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.email.updater).length > 0) {
+      routers.push(createEmailUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (
+    activeCategories.includes("survey") &&
+    Object.keys(operations.survey.reader).length > 0
+  ) {
+    routers.push(createSurveyReader(upstream, env.deniedOps));
+  }
+
+  if (activeCategories.includes("invoice")) {
+    if (Object.keys(operations.invoice.reader).length > 0) {
+      routers.push(createInvoiceReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.invoice.updater).length > 0) {
+      routers.push(createInvoiceUpdater(upstream, env.deniedOps));
+    }
   }
 
   // Help is always registered, even if no other category is active

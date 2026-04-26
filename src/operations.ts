@@ -47,6 +47,11 @@ export const ALL_CATEGORIES = [
   "opportunities",
   "location",
   "workflow",
+  // ─── Slice 7 (GTM) ────
+  "email",
+  "social-media",
+  "survey",
+  "invoice",
 ] as const;
 
 export type CategoryName = (typeof ALL_CATEGORIES)[number];
@@ -919,5 +924,459 @@ export const operations: Manifest = {
       },
     },
     updater: {},
+  },
+
+  // ─── Slice 7 (GTM) ────────────────────────────────────────────────────
+  email: {
+    reader: {
+      "get-templates": {
+        upstream: "get_email_templates",
+        description:
+          "List email templates ('builders') defined for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-campaigns": {
+        upstream: "get_email_campaigns",
+        description: "List email campaigns in the location.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      "create-template": {
+        upstream: "create_email_template",
+        description: "Create a new email template.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-template": {
+        upstream: "update_email_template",
+        description: "Update an existing email template.",
+        params: [
+          {
+            name: "templateId",
+            type: "string",
+            required: true,
+            description: "Email template id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-template": {
+        upstream: "delete_email_template",
+        description: "Delete an email template.",
+        params: [
+          {
+            name: "templateId",
+            type: "string",
+            required: true,
+            description: "Email template id.",
+          },
+        ],
+      },
+      "verify-email": {
+        upstream: "verify_email",
+        description:
+          "Verify an email address via GHL Email ISV (deliverability check). NOTE: routed through EmailISVTools, not EmailTools — handled at dispatch closure.",
+        params: [
+          {
+            name: "email",
+            type: "string",
+            required: true,
+            description: "Email address to verify.",
+          },
+        ],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  "social-media": {
+    reader: {
+      "get-accounts": {
+        upstream: "get_social_accounts",
+        description:
+          "List the location's connected social media accounts (FB / IG / LinkedIn / TikTok / Twitter / Google).",
+        params: [],
+      },
+      "get-platform-accounts": {
+        upstream: "get_platform_accounts",
+        description: "List per-platform OAuth accounts for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-post": {
+        upstream: "get_social_post",
+        description: "Get a single social post by id.",
+        params: [
+          {
+            name: "postId",
+            type: "string",
+            required: true,
+            description: "Social post id.",
+          },
+        ],
+      },
+      "search-posts": {
+        upstream: "search_social_posts",
+        description:
+          "Search/list social posts. Optional filters by platform, status, date.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-tags": {
+        upstream: "get_social_tags",
+        description: "List social-post tags.",
+        params: [],
+      },
+      "get-tags-by-ids": {
+        upstream: "get_social_tags_by_ids",
+        description: "Look up multiple social-post tags by id.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-categories": {
+        upstream: "get_social_categories",
+        description: "List social-post categories.",
+        params: [],
+      },
+      "get-category": {
+        upstream: "get_social_category",
+        description: "Get one social-post category by id.",
+        params: [
+          {
+            name: "categoryId",
+            type: "string",
+            required: true,
+            description: "Social category id.",
+          },
+        ],
+      },
+      "get-google-locations": {
+        upstream: "google",
+        description:
+          "List Google Business Profile locations for an OAuth account.",
+        params: [
+          {
+            name: "accountId",
+            type: "string",
+            required: true,
+            description: "Connected Google account id.",
+          },
+        ],
+      },
+      "get-facebook-pages": {
+        upstream: "facebook",
+        description: "List Facebook pages for an OAuth account.",
+        params: [
+          {
+            name: "accountId",
+            type: "string",
+            required: true,
+            description: "Connected Facebook account id.",
+          },
+        ],
+      },
+      "get-instagram-accounts": {
+        upstream: "instagram",
+        description: "List Instagram accounts for an OAuth connection.",
+        params: [
+          {
+            name: "accountId",
+            type: "string",
+            required: true,
+            description: "Connected Instagram account id.",
+          },
+        ],
+      },
+      "get-linkedin-accounts": {
+        upstream: "linkedin",
+        description:
+          "List LinkedIn accounts (personal + pages) for an OAuth connection.",
+        params: [
+          {
+            name: "accountId",
+            type: "string",
+            required: true,
+            description: "Connected LinkedIn account id.",
+          },
+        ],
+      },
+      "get-twitter-profile": {
+        upstream: "twitter",
+        description: "Get the Twitter/X profile for an OAuth connection.",
+        params: [
+          {
+            name: "accountId",
+            type: "string",
+            required: true,
+            description: "Connected Twitter account id.",
+          },
+        ],
+      },
+      "get-tiktok-profile": {
+        upstream: "tiktok",
+        description: "Get the TikTok profile for an OAuth connection.",
+        params: [
+          {
+            name: "accountId",
+            type: "string",
+            required: true,
+            description: "Connected TikTok account id.",
+          },
+        ],
+      },
+    },
+    updater: {
+      "create-post": {
+        upstream: "create_social_post",
+        description:
+          "Create a social media post (single or multi-platform). Required: account-and-content fields per GHL API.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-post": {
+        upstream: "update_social_post",
+        description: "Update an existing social post (e.g., reschedule).",
+        params: [
+          {
+            name: "postId",
+            type: "string",
+            required: true,
+            description: "Social post id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-post": {
+        upstream: "delete_social_post",
+        description: "Delete a single social post.",
+        params: [
+          {
+            name: "postId",
+            type: "string",
+            required: true,
+            description: "Social post id.",
+          },
+        ],
+      },
+      "bulk-delete-posts": {
+        upstream: "bulk_delete_social_posts",
+        description: "Bulk-delete social posts by id list.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-account": {
+        upstream: "delete_social_account",
+        description: "Disconnect a social media account from the location.",
+        params: [
+          {
+            name: "accountId",
+            type: "string",
+            required: true,
+            description: "Connected social account id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "start-oauth": {
+        upstream: "start_social_oauth",
+        description: "Start an OAuth flow to connect a new social account.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  survey: {
+    reader: {
+      list: {
+        upstream: "ghl_get_surveys",
+        description:
+          "List all surveys (and forms; GHL surfaces forms as surveys via API) for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-submissions": {
+        upstream: "ghl_get_survey_submissions",
+        description: "List submissions for a survey/form.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {},
+  },
+
+  invoice: {
+    reader: {
+      list: {
+        upstream: "list_invoices",
+        description: "List invoices for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      get: {
+        upstream: "get_invoice",
+        description: "Get a single invoice by id.",
+        params: [
+          {
+            name: "invoiceId",
+            type: "string",
+            required: true,
+            description: "Invoice id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-estimates": {
+        upstream: "list_estimates",
+        description: "List estimates for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-templates": {
+        upstream: "list_invoice_templates",
+        description: "List invoice templates.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-template": {
+        upstream: "get_invoice_template",
+        description: "Get a single invoice template by id.",
+        params: [
+          {
+            name: "templateId",
+            type: "string",
+            required: true,
+            description: "Invoice template id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-schedules": {
+        upstream: "list_invoice_schedules",
+        description: "List invoice schedules (recurring billing).",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-schedule": {
+        upstream: "get_invoice_schedule",
+        description: "Get a single invoice schedule by id.",
+        params: [
+          {
+            name: "scheduleId",
+            type: "string",
+            required: true,
+            description: "Invoice schedule id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      create: {
+        upstream: "create_invoice",
+        description: "Create a new invoice.",
+        params: [],
+        additionalProperties: true,
+      },
+      "send-invoice": {
+        upstream: "send_invoice",
+        description: "Send an existing invoice to its contact.",
+        params: [
+          {
+            name: "invoiceId",
+            type: "string",
+            required: true,
+            description: "Invoice id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "create-estimate": {
+        upstream: "create_estimate",
+        description: "Create a new estimate.",
+        params: [],
+        additionalProperties: true,
+      },
+      "send-estimate": {
+        upstream: "send_estimate",
+        description: "Send an existing estimate to its contact.",
+        params: [
+          {
+            name: "estimateId",
+            type: "string",
+            required: true,
+            description: "Estimate id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "create-from-estimate": {
+        upstream: "create_invoice_from_estimate",
+        description: "Convert an accepted estimate into an invoice.",
+        params: [
+          {
+            name: "estimateId",
+            type: "string",
+            required: true,
+            description: "Estimate id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "create-template": {
+        upstream: "create_invoice_template",
+        description: "Create a new invoice template.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-template": {
+        upstream: "update_invoice_template",
+        description: "Update an existing invoice template.",
+        params: [
+          {
+            name: "templateId",
+            type: "string",
+            required: true,
+            description: "Invoice template id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-template": {
+        upstream: "delete_invoice_template",
+        description: "Delete an invoice template.",
+        params: [
+          {
+            name: "templateId",
+            type: "string",
+            required: true,
+            description: "Invoice template id.",
+          },
+        ],
+      },
+      "create-schedule": {
+        upstream: "create_invoice_schedule",
+        description: "Create a recurring invoice schedule.",
+        params: [],
+        additionalProperties: true,
+      },
+      "generate-invoice-number": {
+        upstream: "generate_invoice_number",
+        description:
+          "Reserve and return the next invoice number for the location. Note: claims a number from the sequence (mutates state).",
+        params: [],
+        additionalProperties: true,
+      },
+      "generate-estimate-number": {
+        upstream: "generate_estimate_number",
+        description:
+          "Reserve and return the next estimate number for the location. Note: claims a number from the sequence (mutates state).",
+        params: [],
+        additionalProperties: true,
+      },
+    },
   },
 } as const;
