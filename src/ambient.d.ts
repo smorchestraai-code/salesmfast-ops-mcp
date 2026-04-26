@@ -131,3 +131,47 @@ declare module "ghl-mcp-upstream/dist/tools/invoices-tools.js" {
     ): Promise<unknown>;
   }
 }
+
+// ─── Slice 8 (Revenue) ──────────────────────────────────────────────────
+
+declare module "ghl-mcp-upstream/dist/tools/products-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class ProductsTools {
+    constructor(client: GHLApiClient);
+    /**
+     * NOTE: ProductsTools uses `executeProductsTool`, NOT `executeTool` (quirk).
+     */
+    executeProductsTool(
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/payments-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class PaymentsTools {
+    constructor(client: GHLApiClient);
+    /**
+     * NOTE: PaymentsTools uses `handleToolCall`, NOT `executeTool` (quirk).
+     */
+    handleToolCall(
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/store-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class StoreTools {
+    constructor(client: GHLApiClient);
+    /**
+     * NOTE: StoreTools uses `executeStoreTool`, NOT `executeTool` (quirk).
+     */
+    executeStoreTool(
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<unknown>;
+  }
+}

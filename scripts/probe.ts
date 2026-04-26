@@ -50,6 +50,17 @@ const EXPECTED_SOCIAL_ENVELOPE_KEY = '"accounts"';
 //   "invoices" envelope key (or "data" for some upstream shapes).
 const EXPECTED_INVOICE_ENVELOPE_KEY = "invoices";
 
+// Slice 8 (Revenue) live-data fixtures — preflight-verified 2026-04-26
+const EXPECTED_PRODUCT_ID = "69ccba7986a44520522c56cc"; //    products list (first product on dev location)
+// payments: dev PIT lacks payments.readonly scope via the upstream path (curl
+//   to /payments/orders returns 200 but upstream's executeTool path returns
+//   403 — same situation as location, see L-SMO-009). Router-only assertion.
+// store: upstream wraps the GHL API response in an MCP-style content array
+//   with formatted markdown text. For dev location with no shipping zones,
+//   the response includes the literal phrase "Shipping Zones" — that's the
+//   success indicator (proves the dispatch path works).
+const EXPECTED_STORE_FRAGMENT = "Shipping Zones";
+
 // Negative-test fixture (calendars-reader stays as the representative since
 // every router uses the same factory and same handler order).
 const NEGATIVE_TEST_ROUTER = "ghl-calendars-reader";
@@ -156,6 +167,35 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
       operation: "list",
       expectFragment: EXPECTED_INVOICE_ENVELOPE_KEY,
       label: `ghl-invoice-reader list returns "invoices" envelope`,
+    },
+  },
+  // ─── Slice 8 (Revenue) ────────────────────────────────────────────────
+  {
+    category: "products",
+    expectedRouters: ["ghl-products-reader", "ghl-products-updater"],
+    liveRead: {
+      router: "ghl-products-reader",
+      operation: "list",
+      expectFragment: EXPECTED_PRODUCT_ID,
+      label: `ghl-products-reader list returned ${EXPECTED_PRODUCT_ID}`,
+    },
+  },
+  {
+    category: "payments",
+    expectedRouters: ["ghl-payments-reader", "ghl-payments-updater"],
+    // No liveRead: dev PIT lacks payments.readonly scope via upstream path
+    // (direct curl to /payments/orders returned 200 but upstream's
+    // handleToolCall returned 403). Same situation as location/L-SMO-009.
+    // Router still verified via tools/list + help.list-categories.
+  },
+  {
+    category: "store",
+    expectedRouters: ["ghl-store-reader", "ghl-store-updater"],
+    liveRead: {
+      router: "ghl-store-reader",
+      operation: "list-shipping-zones",
+      expectFragment: EXPECTED_STORE_FRAGMENT,
+      label: `ghl-store-reader list-shipping-zones returns "${EXPECTED_STORE_FRAGMENT}" success text`,
     },
   },
   {

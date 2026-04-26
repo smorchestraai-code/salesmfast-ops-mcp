@@ -33,6 +33,10 @@ import { createSocialReader, createSocialUpdater } from "./social.js";
 import { createEmailReader, createEmailUpdater } from "./email.js";
 import { createSurveyReader } from "./survey.js";
 import { createInvoiceReader, createInvoiceUpdater } from "./invoice.js";
+// ─── Slice 8 (Revenue) ───
+import { createProductsReader, createProductsUpdater } from "./products.js";
+import { createPaymentsReader, createPaymentsUpdater } from "./payments.js";
+import { createStoreReader, createStoreUpdater } from "./store.js";
 import { createHelp } from "./help.js";
 import type { RouterDef } from "./types.js";
 
@@ -149,6 +153,34 @@ export function buildRouters(
     }
     if (Object.keys(operations.invoice.updater).length > 0) {
       routers.push(createInvoiceUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  // ─── Slice 8 (Revenue) ────
+  if (activeCategories.includes("products")) {
+    if (Object.keys(operations.products.reader).length > 0) {
+      routers.push(createProductsReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.products.updater).length > 0) {
+      routers.push(createProductsUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("payments")) {
+    if (Object.keys(operations.payments.reader).length > 0) {
+      routers.push(createPaymentsReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.payments.updater).length > 0) {
+      routers.push(createPaymentsUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("store")) {
+    if (Object.keys(operations.store.reader).length > 0) {
+      routers.push(createStoreReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.store.updater).length > 0) {
+      routers.push(createStoreUpdater(upstream, env.deniedOps));
     }
   }
 

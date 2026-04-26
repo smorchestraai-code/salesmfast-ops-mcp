@@ -22,6 +22,10 @@ import { EmailTools } from "ghl-mcp-upstream/dist/tools/email-tools.js";
 import { EmailISVTools } from "ghl-mcp-upstream/dist/tools/email-isv-tools.js";
 import { SurveyTools } from "ghl-mcp-upstream/dist/tools/survey-tools.js";
 import { InvoicesTools } from "ghl-mcp-upstream/dist/tools/invoices-tools.js";
+// ─── Slice 8 (Revenue) ───
+import { ProductsTools } from "ghl-mcp-upstream/dist/tools/products-tools.js";
+import { PaymentsTools } from "ghl-mcp-upstream/dist/tools/payments-tools.js";
+import { StoreTools } from "ghl-mcp-upstream/dist/tools/store-tools.js";
 import type { ParsedEnv } from "./env.js";
 
 const GHL_API_VERSION = "2021-07-28";
@@ -39,6 +43,10 @@ export interface Upstream {
   readonly emailIsvTools: EmailISVTools;
   readonly surveyTools: SurveyTools;
   readonly invoicesTools: InvoicesTools;
+  // ─── Slice 8 ───
+  readonly productsTools: ProductsTools;
+  readonly paymentsTools: PaymentsTools;
+  readonly storeTools: StoreTools;
 }
 
 export function createUpstream(env: ParsedEnv): Upstream {
@@ -60,5 +68,8 @@ export function createUpstream(env: ParsedEnv): Upstream {
     emailIsvTools: new EmailISVTools(client),
     surveyTools: new SurveyTools(client),
     invoicesTools: new InvoicesTools(client),
+    productsTools: new ProductsTools(client),
+    paymentsTools: new PaymentsTools(client),
+    storeTools: new StoreTools(client),
   };
 }
