@@ -34,8 +34,9 @@ const REQUEST_TIMEOUT_MS = 30_000;
 const PROTOCOL_VERSION = "2024-11-05";
 
 // ─── Live-data fixtures (BRD §10.3 + 2026-04-26 capture) ────────────────
-const EXPECTED_LIVE_GROUP_ID = "FKQpu4dGBFauC28DQfSP"; // calendars list-groups
-const EXPECTED_CONTACT_ID = "uHDvdJ5uiaX2TAwa9LH9"; //   contacts search
+const EXPECTED_LIVE_GROUP_ID = "FKQpu4dGBFauC28DQfSP"; //    calendars list-groups
+const EXPECTED_CONTACT_ID = "uHDvdJ5uiaX2TAwa9LH9"; //       contacts search
+const EXPECTED_CONVERSATION_ID = "Bh1aXpcKJOmhEMw1UeZa"; //  conversations search
 
 const EXPECTED_BOOT_LOG_PREFIX = "[salesmfast-ops] active_categories=";
 
@@ -74,6 +75,16 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
       operation: "search",
       expectFragment: EXPECTED_CONTACT_ID,
       label: `ghl-contacts-reader search returned ${EXPECTED_CONTACT_ID}`,
+    },
+  },
+  {
+    category: "conversations",
+    expectedRouters: ["ghl-conversations-reader", "ghl-conversations-updater"],
+    liveRead: {
+      router: "ghl-conversations-reader",
+      operation: "search",
+      expectFragment: EXPECTED_CONVERSATION_ID,
+      label: `ghl-conversations-reader search returned ${EXPECTED_CONVERSATION_ID}`,
     },
   },
   {

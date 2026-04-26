@@ -18,6 +18,10 @@ import {
 } from "../operations.js";
 import { createCalendarsReader } from "./calendars.js";
 import { createContactsReader, createContactsUpdater } from "./contacts.js";
+import {
+  createConversationsReader,
+  createConversationsUpdater,
+} from "./conversations.js";
 import { createHelp } from "./help.js";
 import type { RouterDef } from "./types.js";
 
@@ -63,6 +67,15 @@ export function buildRouters(
     }
     if (Object.keys(operations.contacts.updater).length > 0) {
       routers.push(createContactsUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("conversations")) {
+    if (Object.keys(operations.conversations.reader).length > 0) {
+      routers.push(createConversationsReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.conversations.updater).length > 0) {
+      routers.push(createConversationsUpdater(upstream, env.deniedOps));
     }
   }
 

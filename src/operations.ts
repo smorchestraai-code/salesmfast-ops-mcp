@@ -312,9 +312,208 @@ export const operations: Manifest = {
     },
   },
 
-  // ─── conversations / opportunities / location / workflow ────────────
-  // Filled in by slices 3-6.
-  conversations: { reader: {}, updater: {} },
+  // ─── conversations (slice 3) ────────────────────────────────────────
+  conversations: {
+    reader: {
+      search: {
+        upstream: "search_conversations",
+        description:
+          "Search conversations in the location. Optional filters: contactId, query, status, etc. Returns paginated results.",
+        params: [],
+        additionalProperties: true,
+      },
+      get: {
+        upstream: "get_conversation",
+        description: "Get a single conversation by id.",
+        params: [
+          {
+            name: "conversationId",
+            type: "string",
+            required: true,
+            description: "Conversation id.",
+          },
+        ],
+      },
+      "get-message": {
+        upstream: "get_message",
+        description: "Get a single message by id.",
+        params: [
+          {
+            name: "messageId",
+            type: "string",
+            required: true,
+            description: "Message id.",
+          },
+        ],
+      },
+      "get-email-message": {
+        upstream: "get_email_message",
+        description: "Get a single email message by id.",
+        params: [
+          {
+            name: "emailMessageId",
+            type: "string",
+            required: true,
+            description: "Email message id.",
+          },
+        ],
+      },
+      "get-recent-messages": {
+        upstream: "get_recent_messages",
+        description: "List recent messages in a conversation.",
+        params: [
+          {
+            name: "conversationId",
+            type: "string",
+            required: true,
+            description: "Conversation id.",
+          },
+        ],
+      },
+      "get-message-recording": {
+        upstream: "get_message_recording",
+        description: "Get the recording (binary URL) for a voice message.",
+        params: [
+          {
+            name: "messageId",
+            type: "string",
+            required: true,
+            description: "Message id.",
+          },
+        ],
+      },
+    },
+    updater: {
+      "send-sms": {
+        upstream: "send_sms",
+        description:
+          "Send an SMS to a contact. Required: contactId + message. Optional: fromNumber, etc.",
+        params: [
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "Recipient contact id.",
+          },
+          {
+            name: "message",
+            type: "string",
+            required: true,
+            description: "SMS body.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "send-email": {
+        upstream: "send_email",
+        description:
+          "Send an email to a contact. Required: contactId. Subject/body/html/template variants supported via optional fields.",
+        params: [
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "Recipient contact id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      create: {
+        upstream: "create_conversation",
+        description: "Create a new conversation for a contact.",
+        params: [
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "Contact id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      update: {
+        upstream: "update_conversation",
+        description: "Update fields on an existing conversation.",
+        params: [
+          {
+            name: "conversationId",
+            type: "string",
+            required: true,
+            description: "Conversation id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      delete: {
+        upstream: "delete_conversation",
+        description: "Delete a conversation by id.",
+        params: [
+          {
+            name: "conversationId",
+            type: "string",
+            required: true,
+            description: "Conversation id.",
+          },
+        ],
+      },
+      "upload-attachments": {
+        upstream: "upload_message_attachments",
+        description: "Upload attachments to a conversation.",
+        params: [
+          {
+            name: "conversationId",
+            type: "string",
+            required: true,
+            description: "Conversation id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "update-message-status": {
+        upstream: "update_message_status",
+        description: "Update a message's delivery status.",
+        params: [
+          {
+            name: "messageId",
+            type: "string",
+            required: true,
+            description: "Message id.",
+          },
+          {
+            name: "status",
+            type: "string",
+            required: true,
+            description: "New status (delivered, read, failed, etc.).",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "cancel-scheduled-message": {
+        upstream: "cancel_scheduled_message",
+        description: "Cancel a previously-scheduled SMS or message.",
+        params: [
+          {
+            name: "messageId",
+            type: "string",
+            required: true,
+            description: "Message id.",
+          },
+        ],
+      },
+      "cancel-scheduled-email": {
+        upstream: "cancel_scheduled_email",
+        description: "Cancel a previously-scheduled email.",
+        params: [
+          {
+            name: "emailMessageId",
+            type: "string",
+            required: true,
+            description: "Email message id.",
+          },
+        ],
+      },
+    },
+  },
 
   // ─── calendars (slice 1) ────────────────────────────────────────────
   calendars: {

@@ -46,6 +46,33 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `add-to-workflow` | `add_contact_to_workflow` | Add a contact to a workflow. Optional eventStartTime to schedule entry. |
 | `remove-from-workflow` | `remove_contact_from_workflow` | Remove a contact from a workflow. |
 
+## conversations
+
+### `ghl-conversations-reader` (6 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `search` | `search_conversations` | Search conversations in the location. Optional filters: contactId, query, status, etc. Returns paginated results. |
+| `get` | `get_conversation` | Get a single conversation by id. |
+| `get-message` | `get_message` | Get a single message by id. |
+| `get-email-message` | `get_email_message` | Get a single email message by id. |
+| `get-recent-messages` | `get_recent_messages` | List recent messages in a conversation. |
+| `get-message-recording` | `get_message_recording` | Get the recording (binary URL) for a voice message. |
+
+### `ghl-conversations-updater` (9 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `send-sms` | `send_sms` | Send an SMS to a contact. Required: contactId + message. Optional: fromNumber, etc. |
+| `send-email` | `send_email` | Send an email to a contact. Required: contactId. Subject/body/html/template variants supported via optional fields. |
+| `create` | `create_conversation` | Create a new conversation for a contact. |
+| `update` | `update_conversation` | Update fields on an existing conversation. |
+| `delete` | `delete_conversation` | Delete a conversation by id. |
+| `upload-attachments` | `upload_message_attachments` | Upload attachments to a conversation. |
+| `update-message-status` | `update_message_status` | Update a message's delivery status. |
+| `cancel-scheduled-message` | `cancel_scheduled_message` | Cancel a previously-scheduled SMS or message. |
+| `cancel-scheduled-email` | `cancel_scheduled_email` | Cancel a previously-scheduled email. |
+
 ## calendars
 
 ### `ghl-calendars-reader` (6 operations)
@@ -63,9 +90,9 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 
 ## Totals
 
-- Reader operations: **15**
-- Updater operations: **18**
-- Total: **33**
+- Reader operations: **21**
+- Updater operations: **27**
+- Total: **48**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.
