@@ -242,13 +242,21 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
     liveRead: {
       router: "ghl-custom-field-v2-reader",
       operation: "get-by-object-key",
-      // Custom-field v2 API rejects "contact" and "opportunity" objectKeys by
-      // design; use the dev location's custom Company schema's key.
-      // The schema id is 67cec41d11ea7017a8c72a33 ("Company"/"Companies").
-      params: { objectKey: "custom_objects.company" },
-      expectFragment: "fields",
+      // Custom-field v2 API rejects `contact` and `opportunity` objectKeys
+      // by design; use a USER_DEFINED custom-object key. On the dev location
+      // the Webinar object has key `custom_objects.webinars`. SYSTEM-defined
+      // objects (Company, Opportunity, Contact) use simple keys (`business`,
+      // `opportunity`, `contact`) and the v2 API only accepts custom_objects.*
+      // namespace for fields lookup — Company schema key is `business` not
+      // `custom_objects.company` (that earlier value was wrong; the probe was
+      // passing only because the error envelope happened to contain the word
+      // "fields" in the failed-tool name).
+      params: { objectKey: "custom_objects.webinars" },
+      // Use a fragment that ONLY appears in success responses (a real field id
+      // pattern) so we can't get a false positive on the error envelope.
+      expectFragment: "fieldKey",
       label:
-        "ghl-custom-field-v2-reader get-by-object-key returns fields envelope (Company)",
+        "ghl-custom-field-v2-reader get-by-object-key returns real fields (custom_objects.webinars)",
     },
   },
   {
