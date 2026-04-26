@@ -16,6 +16,7 @@
     "build:watch": "tsc --watch",
     "start": "node dist/server.js",
     "probe": "tsx scripts/probe.ts",
+    "probe:write": "tsx scripts/probe-write.ts",
     "docs:mapping": "tsx scripts/gen-mapping-doc.ts",
     "lint": "tsc -p tsconfig.scripts.json",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\""
