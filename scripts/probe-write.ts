@@ -167,11 +167,13 @@ async function main(): Promise<void> {
       // GHL's delete envelope uses the misspelled key `succeded`. We accept
       // any of the reasonable success keys to be resilient to upstream typo
       // fixes or shape evolution.
-      const flagged = (key: string) =>
-        payload &&
-        typeof payload === "object" &&
-        (payload as Record<string, unknown>)[key] === true;
-      const acknowledged =
+      const flagged = (key: string): boolean =>
+        Boolean(
+          payload &&
+          typeof payload === "object" &&
+          (payload as Record<string, unknown>)[key] === true,
+        );
+      const acknowledged: boolean =
         flagged("succeded") || flagged("success") || flagged("succeeded");
       const ok = !result.isError && acknowledged;
       record(

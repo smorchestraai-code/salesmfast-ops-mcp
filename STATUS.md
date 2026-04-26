@@ -67,9 +67,10 @@ Each slice commit message includes the 5-hat composite. Phase 1 average across s
 | 6 | Claude Desktop swap verified live | ✅ slice 1 (2026-04-26) |
 | 7 | All 10 stories' ACs in STATUS.md | ✅ (this file) |
 
-## Open follow-ups (post Phase 2 close)
+## Open follow-ups (post handover)
 
-- **L-SMO-009 PIT-scope re-enables** — when higher-scoped PITs are available, re-enable the live-read assertions for: location (slice 5), payments (slice 8), media (slice 9), custom-field-v2 (slice 10), and any other router-only entries.
+- ✅ **L-SMO-009 PIT-scope re-enables** — DONE 2026-04-26 (handover). Full-scope PIT in `.env` unlocked location / payments / media / blog / custom-field-v2 live-reads. Probe is now **22/22 GREEN with all 18 categories live-verified** (`v1.0.0-handover-ready`).
 - **Skill propagation** — smorch-brain PR #13 (ghl-operator SKILL.md migration to facade) is OPEN awaiting review per branch protection on the canonical brain repo. Slice 7-11 router additions (28 new tools) need a follow-up SKILL.md amendment after PR #13 merges.
-- **Slice 7 / 8 op-level live-reads** — most slice 7-11 ops have router-only assertions. Operators using these per-client should run their own opt-in probes (similar to `npm run probe:write` for AC-6.4) to verify the live data path for their specific scope.
-- **Manifest size** — `src/operations.ts` is now ~2000 lines. Phase 2.5 cleanup: split per-category files under `src/operations/<category>.ts` with a barrel export.
+- **`locationId` / `altId` UX wart** — operators must pass these explicitly to location + payments ops (upstream doesn't auto-inject). Documented in `docs/MIGRATION.md` "Param-passing quirk" section. Phase 2.5 cleanup: factory-level `paramInjections` to auto-merge.
+- **Manifest size** — `src/operations.ts` is now ~2200 lines. Phase 2.5 cleanup: split per-category files under `src/operations/<category>.ts` with a barrel export.
+- **Op-level live-reads for write paths** — Phase 1.5 covered AC-6.4 on contacts (create→get→delete). Other write paths (send-sms, create-invoice, create-social-post, etc.) are router-only verified. Per-client opt-in probes recommended.

@@ -73,6 +73,7 @@ Global lessons live in `~/.claude/lessons.md` and apply across all SMOrchestra p
 - **Check:** QA hat — when a probe assertion fails with a clean `[upstream <category>] 4xx` envelope, the failure is a scope/permissions issue, not a router bug. Router code that produces a clean error envelope on auth failure is *correct* behavior.
 - **Enforcement:** `scripts/probe.ts` has `liveRead` as optional in `CategoryProbe`. Slice 5 ships with location skipped + inline comment explaining why. Re-enable the assertion when a higher-scoped PIT is provisioned.
 - **Last triggered:** 2026-04-26 (slice 5)
+- **2026-04-26 update (handover):** New full-scope PIT received. Live-reads re-enabled for location, payments, media, custom-field-v2, blog. **Sub-finding:** the upstream tool wrappers (`LocationTools.getLocationTags`, `PaymentsTools.listOrders`) do NOT auto-inject `locationId` / `altId` from the GHLApiClient config — they extract these from `params` and pass them as URL/query params. Operators MUST pass `locationId` (location ops) or `altId` + `altType` (payments ops) explicitly in the `selectSchema.params` payload, even though the location is already configured in env. Affected reader ops marked `additionalProperties: true` in operations.ts to allow these pass-through params. Phase 2.5 cleanup candidate: add a category-level `paramInjections` config to the factory so locationId is auto-merged for location ops without operators having to know.
 
 ### L-SMO-008 — Composite ship gate raised from 92 to 95
 - **Captured:** 2026-04-26 (post-slice-1)
