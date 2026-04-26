@@ -43,6 +43,8 @@ const EXPECTED_PIPELINE_ID = "Zf2Lv61fAmm4JliTRsxI"; //      opportunities list-
 // correct (clean upstreamError envelope) but the data path is gated. Re-enable
 // when a higher-scoped PIT is available.
 
+const EXPECTED_WORKFLOW_ID = "8c0aed9f-db60-437f-9127-2a67d7b8620b"; // workflow list (Funnel Engineering, captured 2026-04-26)
+
 const EXPECTED_BOOT_LOG_PREFIX = "[salesmfast-ops] active_categories=";
 
 // Negative-test fixture (calendars-reader stays as the representative since
@@ -94,7 +96,7 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
   },
   {
     category: "calendars",
-    expectedRouters: ["ghl-calendars-reader"],
+    expectedRouters: ["ghl-calendars-reader", "ghl-calendars-updater"],
     liveRead: {
       router: "ghl-calendars-reader",
       operation: "list-groups",
@@ -120,6 +122,16 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
     // upstream.executeTool call, not a facade bug). Router still verified via
     // tools/list + help.list-categories; full verification waits for a
     // higher-scoped PIT. See lessons L-SMO-009.
+  },
+  {
+    category: "workflow",
+    expectedRouters: ["ghl-workflow-reader"],
+    liveRead: {
+      router: "ghl-workflow-reader",
+      operation: "list",
+      expectFragment: EXPECTED_WORKFLOW_ID,
+      label: `ghl-workflow-reader list returned ${EXPECTED_WORKFLOW_ID}`,
+    },
   },
 ];
 
@@ -441,16 +453,20 @@ async function main(): Promise<void> {
       tools: { name: string }[];
     };
     const names = result.tools.map((t) => t.name).sort();
-    const expected = ["ghl-calendars-reader", "ghl-toolkit-help"].sort();
+    const expected = [
+      "ghl-calendars-reader",
+      "ghl-calendars-updater",
+      "ghl-toolkit-help",
+    ].sort();
     const toolsOk =
       names.length === expected.length &&
       names.every((n, i) => n === expected[i]);
     const stderrOk = b.stderr.includes(EXPECTED_BOOT_LOG_PREFIX);
     record(
-      "env-filter (GHL_TOOL_CATEGORIES=calendars) registered 2 tools, stderr line matched",
+      `env-filter (GHL_TOOL_CATEGORIES=calendars) registered ${expected.length} tools, stderr line matched`,
       toolsOk && stderrOk,
       toolsOk && stderrOk
-        ? "tools=2, stderr ok"
+        ? `tools=${expected.length}, stderr ok`
         : `tools=[${names.join(", ")}], stderrHasPrefix=${stderrOk}; stderr first 300: ${b.stderr.slice(
             0,
             300,

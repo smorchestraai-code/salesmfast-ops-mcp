@@ -1,11 +1,11 @@
 /**
- * ghl-calendars-reader router — Phase 1 vertical slice headline router.
+ * ghl-calendars-reader + ghl-calendars-updater routers.
  *
- * Description verbatim from plan §Verbatim strings; if it drifts, the help
- * tool's manifest (which references router names) and the probe's assertion
- * 6 (stderr boot-log line) can fall out of sync.
+ * Reader: 6 ops (Phase 1 slice 1 headline). Updater: 6 ops (slice 6 cleanup —
+ * completes the calendars category to match BRD section 7.3 fully).
  *
- * Logic lives in routers/factory.ts. This file is config + description.
+ * Descriptions verbatim — if they drift, help tool + probe stderr-grep fall
+ * out of sync. Logic lives in routers/factory.ts.
  */
 
 import { operations } from "../operations.js";
@@ -20,6 +20,13 @@ const CALENDARS_READER_DESCRIPTION =
   'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
   'params: { router: "ghl-calendars-reader", operation: "<name>" } }` for the full schema.';
 
+const CALENDARS_UPDATER_DESCRIPTION =
+  "Write access to GoHighLevel calendars: create / update / delete calendars; create / update / delete appointments. " +
+  "Operations: `create`, `update`, `delete`, `create-appointment`, `update-appointment`, `delete-appointment`. " +
+  "All operations mutate state — gate behind explicit confirmation; do NOT auto-approve. " +
+  'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
+  'params: { router: "ghl-calendars-updater", operation: "<name>" } }` for the full schema.';
+
 export function createCalendarsReader(
   upstream: Upstream,
   deniedOps: readonly string[],
@@ -29,6 +36,20 @@ export function createCalendarsReader(
     description: CALENDARS_READER_DESCRIPTION,
     category: "calendars",
     ops: operations.calendars.reader,
+    deniedOps,
+    dispatch: (op, params) => upstream.calendarTools.executeTool(op, params),
+  });
+}
+
+export function createCalendarsUpdater(
+  upstream: Upstream,
+  deniedOps: readonly string[],
+): RouterDef {
+  return createCategoryRouter({
+    name: "ghl-calendars-updater",
+    description: CALENDARS_UPDATER_DESCRIPTION,
+    category: "calendars",
+    ops: operations.calendars.updater,
     deniedOps,
     dispatch: (op, params) => upstream.calendarTools.executeTool(op, params),
   });

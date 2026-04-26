@@ -621,7 +621,78 @@ export const operations: Manifest = {
         ],
       },
     },
-    updater: {},
+    updater: {
+      create: {
+        upstream: "create_calendar",
+        description:
+          "Create a new calendar in a calendar group. Required: groupId + name (typically) — see GHL API docs.",
+        params: [],
+        additionalProperties: true,
+      },
+      update: {
+        upstream: "update_calendar",
+        description: "Update fields on an existing calendar.",
+        params: [
+          {
+            name: "calendarId",
+            type: "string",
+            required: true,
+            description: "Calendar id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      delete: {
+        upstream: "delete_calendar",
+        description: "Delete a calendar by id.",
+        params: [
+          {
+            name: "calendarId",
+            type: "string",
+            required: true,
+            description: "Calendar id.",
+          },
+        ],
+      },
+      "create-appointment": {
+        upstream: "create_appointment",
+        description: "Create an appointment on a calendar.",
+        params: [
+          {
+            name: "calendarId",
+            type: "string",
+            required: true,
+            description: "Calendar id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "update-appointment": {
+        upstream: "update_appointment",
+        description: "Update an existing appointment.",
+        params: [
+          {
+            name: "appointmentId",
+            type: "string",
+            required: true,
+            description: "Appointment id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-appointment": {
+        upstream: "delete_appointment",
+        description: "Delete an appointment by id.",
+        params: [
+          {
+            name: "appointmentId",
+            type: "string",
+            required: true,
+            description: "Appointment id.",
+          },
+        ],
+      },
+    },
   },
 
   opportunities: {
@@ -839,5 +910,14 @@ export const operations: Manifest = {
       },
     },
   },
-  workflow: { reader: {}, updater: {} },
+  workflow: {
+    reader: {
+      list: {
+        upstream: "ghl_get_workflows",
+        description: "List all workflows defined for the location.",
+        params: [],
+      },
+    },
+    updater: {},
+  },
 } as const;

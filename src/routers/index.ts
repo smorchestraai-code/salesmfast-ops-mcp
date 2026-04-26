@@ -16,7 +16,7 @@ import {
   operations,
   type CategoryName,
 } from "../operations.js";
-import { createCalendarsReader } from "./calendars.js";
+import { createCalendarsReader, createCalendarsUpdater } from "./calendars.js";
 import { createContactsReader, createContactsUpdater } from "./contacts.js";
 import {
   createConversationsReader,
@@ -27,6 +27,7 @@ import {
   createOpportunitiesReader,
   createOpportunitiesUpdater,
 } from "./opportunities.js";
+import { createWorkflowReader } from "./workflow.js";
 import { createHelp } from "./help.js";
 import type { RouterDef } from "./types.js";
 
@@ -59,11 +60,13 @@ export function buildRouters(
 
   const routers: RouterDef[] = [];
 
-  if (
-    activeCategories.includes("calendars") &&
-    Object.keys(operations.calendars.reader).length > 0
-  ) {
-    routers.push(createCalendarsReader(upstream, env.deniedOps));
+  if (activeCategories.includes("calendars")) {
+    if (Object.keys(operations.calendars.reader).length > 0) {
+      routers.push(createCalendarsReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.calendars.updater).length > 0) {
+      routers.push(createCalendarsUpdater(upstream, env.deniedOps));
+    }
   }
 
   if (activeCategories.includes("contacts")) {
@@ -100,6 +103,13 @@ export function buildRouters(
     if (Object.keys(operations.location.updater).length > 0) {
       routers.push(createLocationUpdater(upstream, env.deniedOps));
     }
+  }
+
+  if (
+    activeCategories.includes("workflow") &&
+    Object.keys(operations.workflow.reader).length > 0
+  ) {
+    routers.push(createWorkflowReader(upstream, env.deniedOps));
   }
 
   // Help is always registered, even if no other category is active

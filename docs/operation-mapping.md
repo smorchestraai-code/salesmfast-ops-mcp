@@ -86,6 +86,17 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `list-free-slots` | `get_free_slots` | List free slots in a calendar for a date range. |
 | `get-appointment` | `get_appointment` | Get a single appointment by id. |
 
+### `ghl-calendars-updater` (6 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create` | `create_calendar` | Create a new calendar in a calendar group. Required: groupId + name (typically) — see GHL API docs. |
+| `update` | `update_calendar` | Update fields on an existing calendar. |
+| `delete` | `delete_calendar` | Delete a calendar by id. |
+| `create-appointment` | `create_appointment` | Create an appointment on a calendar. |
+| `update-appointment` | `update_appointment` | Update an existing appointment. |
+| `delete-appointment` | `delete_appointment` | Delete an appointment by id. |
+
 ## opportunities
 
 ### `ghl-opportunities-reader` (3 operations)
@@ -132,13 +143,21 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `update-tag` | `update_location_tag` | Update an existing location tag (rename, etc.). |
 | `delete-tag` | `delete_location_tag` | Delete a location tag by id. |
 
+## workflow
+
+### `ghl-workflow-reader` (1 operation)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list` | `ghl_get_workflows` | List all workflows defined for the location. |
+
 ---
 
 ## Totals
 
-- Reader operations: **35**
-- Updater operations: **35**
-- Total: **70**
+- Reader operations: **36**
+- Updater operations: **41**
+- Total: **77**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.
