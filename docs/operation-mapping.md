@@ -324,13 +324,47 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `delete-shipping-carrier` | `ghl_delete_shipping_carrier` | Delete a shipping carrier by id. |
 | `create-store-setting` | `ghl_create_store_setting` | Create the store-level settings record. |
 
+## blog
+
+### `ghl-blog-reader` (5 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `get-sites` | `get_blog_sites` | List blog sites (sub-blogs) defined for the location. |
+| `get-posts` | `get_blog_posts` | List blog posts in a site. |
+| `get-authors` | `get_blog_authors` | List blog authors. |
+| `get-categories` | `get_blog_categories` | List blog categories. |
+| `check-url-slug` | `check_url_slug` | Check whether a URL slug is available for a blog post. |
+
+### `ghl-blog-updater` (2 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-post` | `create_blog_post` | Create a new blog post. |
+| `update-post` | `update_blog_post` | Update an existing blog post. |
+
+## media
+
+### `ghl-media-reader` (1 operation)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `get-files` | `get_media_files` | List media files in the location's library. |
+
+### `ghl-media-updater` (2 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `upload-file` | `upload_media_file` | Upload a media file to the location's library. |
+| `delete-file` | `delete_media_file` | Delete a media file from the library. |
+
 ---
 
 ## Totals
 
-- Reader operations: **85**
-- Updater operations: **86**
-- Total: **171**
+- Reader operations: **91**
+- Updater operations: **90**
+- Total: **181**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.

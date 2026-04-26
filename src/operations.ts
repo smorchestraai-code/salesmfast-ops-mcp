@@ -56,6 +56,9 @@ export const ALL_CATEGORIES = [
   "products",
   "payments",
   "store",
+  // ─── Slice 9 (Content) ────
+  "blog",
+  "media",
 ] as const;
 
 export type CategoryName = (typeof ALL_CATEGORIES)[number];
@@ -1811,6 +1814,95 @@ export const operations: Manifest = {
         upstream: "ghl_create_store_setting",
         description: "Create the store-level settings record.",
         params: [],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  // ─── Slice 9 (Content) ────────────────────────────────────────────────
+  blog: {
+    reader: {
+      "get-sites": {
+        upstream: "get_blog_sites",
+        description: "List blog sites (sub-blogs) defined for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-posts": {
+        upstream: "get_blog_posts",
+        description: "List blog posts in a site.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-authors": {
+        upstream: "get_blog_authors",
+        description: "List blog authors.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-categories": {
+        upstream: "get_blog_categories",
+        description: "List blog categories.",
+        params: [],
+        additionalProperties: true,
+      },
+      "check-url-slug": {
+        upstream: "check_url_slug",
+        description: "Check whether a URL slug is available for a blog post.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      "create-post": {
+        upstream: "create_blog_post",
+        description: "Create a new blog post.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-post": {
+        upstream: "update_blog_post",
+        description: "Update an existing blog post.",
+        params: [
+          {
+            name: "postId",
+            type: "string",
+            required: true,
+            description: "Blog post id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  media: {
+    reader: {
+      "get-files": {
+        upstream: "get_media_files",
+        description: "List media files in the location's library.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      "upload-file": {
+        upstream: "upload_media_file",
+        description: "Upload a media file to the location's library.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-file": {
+        upstream: "delete_media_file",
+        description: "Delete a media file from the library.",
+        params: [
+          {
+            name: "fileId",
+            type: "string",
+            required: true,
+            description: "Media file id.",
+          },
+        ],
         additionalProperties: true,
       },
     },
