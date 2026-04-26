@@ -151,13 +151,102 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 |-----------|---------------|-------------|
 | `list` | `ghl_get_workflows` | List all workflows defined for the location. |
 
+## email
+
+### `ghl-email-reader` (2 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `get-templates` | `get_email_templates` | List email templates ('builders') defined for the location. |
+| `get-campaigns` | `get_email_campaigns` | List email campaigns in the location. |
+
+### `ghl-email-updater` (4 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-template` | `create_email_template` | Create a new email template. |
+| `update-template` | `update_email_template` | Update an existing email template. |
+| `delete-template` | `delete_email_template` | Delete an email template. |
+| `verify-email` | `verify_email` | Verify an email address via GHL Email ISV (deliverability check). NOTE: routed through EmailISVTools, not EmailTools — handled at dispatch closure. |
+
+## social-media
+
+### `ghl-social-media-reader` (14 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `get-accounts` | `get_social_accounts` | List the location's connected social media accounts (FB / IG / LinkedIn / TikTok / Twitter / Google). |
+| `get-platform-accounts` | `get_platform_accounts` | List per-platform OAuth accounts for the location. |
+| `get-post` | `get_social_post` | Get a single social post by id. |
+| `search-posts` | `search_social_posts` | Search/list social posts. Optional filters by platform, status, date. |
+| `get-tags` | `get_social_tags` | List social-post tags. |
+| `get-tags-by-ids` | `get_social_tags_by_ids` | Look up multiple social-post tags by id. |
+| `get-categories` | `get_social_categories` | List social-post categories. |
+| `get-category` | `get_social_category` | Get one social-post category by id. |
+| `get-google-locations` | `google` | List Google Business Profile locations for an OAuth account. |
+| `get-facebook-pages` | `facebook` | List Facebook pages for an OAuth account. |
+| `get-instagram-accounts` | `instagram` | List Instagram accounts for an OAuth connection. |
+| `get-linkedin-accounts` | `linkedin` | List LinkedIn accounts (personal + pages) for an OAuth connection. |
+| `get-twitter-profile` | `twitter` | Get the Twitter/X profile for an OAuth connection. |
+| `get-tiktok-profile` | `tiktok` | Get the TikTok profile for an OAuth connection. |
+
+### `ghl-social-media-updater` (6 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-post` | `create_social_post` | Create a social media post (single or multi-platform). Required: account-and-content fields per GHL API. |
+| `update-post` | `update_social_post` | Update an existing social post (e.g., reschedule). |
+| `delete-post` | `delete_social_post` | Delete a single social post. |
+| `bulk-delete-posts` | `bulk_delete_social_posts` | Bulk-delete social posts by id list. |
+| `delete-account` | `delete_social_account` | Disconnect a social media account from the location. |
+| `start-oauth` | `start_social_oauth` | Start an OAuth flow to connect a new social account. |
+
+## survey
+
+### `ghl-survey-reader` (2 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list` | `ghl_get_surveys` | List all surveys (and forms; GHL surfaces forms as surveys via API) for the location. |
+| `list-submissions` | `ghl_get_survey_submissions` | List submissions for a survey/form. |
+
+## invoice
+
+### `ghl-invoice-reader` (7 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list` | `list_invoices` | List invoices for the location. |
+| `get` | `get_invoice` | Get a single invoice by id. |
+| `list-estimates` | `list_estimates` | List estimates for the location. |
+| `list-templates` | `list_invoice_templates` | List invoice templates. |
+| `get-template` | `get_invoice_template` | Get a single invoice template by id. |
+| `list-schedules` | `list_invoice_schedules` | List invoice schedules (recurring billing). |
+| `get-schedule` | `get_invoice_schedule` | Get a single invoice schedule by id. |
+
+### `ghl-invoice-updater` (11 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create` | `create_invoice` | Create a new invoice. |
+| `send-invoice` | `send_invoice` | Send an existing invoice to its contact. |
+| `create-estimate` | `create_estimate` | Create a new estimate. |
+| `send-estimate` | `send_estimate` | Send an existing estimate to its contact. |
+| `create-from-estimate` | `create_invoice_from_estimate` | Convert an accepted estimate into an invoice. |
+| `create-template` | `create_invoice_template` | Create a new invoice template. |
+| `update-template` | `update_invoice_template` | Update an existing invoice template. |
+| `delete-template` | `delete_invoice_template` | Delete an invoice template. |
+| `create-schedule` | `create_invoice_schedule` | Create a recurring invoice schedule. |
+| `generate-invoice-number` | `generate_invoice_number` | Reserve and return the next invoice number for the location. Note: claims a number from the sequence (mutates state). |
+| `generate-estimate-number` | `generate_estimate_number` | Reserve and return the next estimate number for the location. Note: claims a number from the sequence (mutates state). |
+
 ---
 
 ## Totals
 
-- Reader operations: **36**
-- Updater operations: **41**
-- Total: **77**
+- Reader operations: **61**
+- Updater operations: **62**
+- Total: **123**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.

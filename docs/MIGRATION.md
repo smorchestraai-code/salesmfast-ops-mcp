@@ -169,7 +169,58 @@ Every old tool name maps to one operation under one router. The router's input i
 | `delete_location_tag` | `ghl-location-updater` | `delete-tag` |
 | `ghl_get_workflows` | `ghl-workflow-reader` | `list` |
 
-**77 upstream tool names → 12 routers + 80 operations** (3 of those are `ghl-toolkit-help`'s own ops). The full machine-readable mapping lives in `docs/operation-mapping.md` (auto-generated from `src/operations.ts`).
+#### Slice 7 — GTM (added 2026-04-26, tag `v0.3.0-slice-7-gtm`)
+
+| Old (`mcp__ghl-mcp__<name>`) | New router | New operation |
+|---|---|---|
+| `get_email_templates` | `ghl-email-reader` | `get-templates` |
+| `get_email_campaigns` | `ghl-email-reader` | `get-campaigns` |
+| `create_email_template` | `ghl-email-updater` | `create-template` |
+| `update_email_template` | `ghl-email-updater` | `update-template` |
+| `delete_email_template` | `ghl-email-updater` | `delete-template` |
+| `verify_email` | `ghl-email-updater` | `verify-email` |
+| `get_social_accounts` | `ghl-social-reader` | `get-accounts` |
+| `get_platform_accounts` | `ghl-social-reader` | `get-platform-accounts` |
+| `get_social_post` | `ghl-social-reader` | `get-post` |
+| `search_social_posts` | `ghl-social-reader` | `search-posts` |
+| `get_social_tags` | `ghl-social-reader` | `get-tags` |
+| `get_social_tags_by_ids` | `ghl-social-reader` | `get-tags-by-ids` |
+| `get_social_categories` | `ghl-social-reader` | `get-categories` |
+| `get_social_category` | `ghl-social-reader` | `get-category` |
+| `google` | `ghl-social-reader` | `get-google-locations` |
+| `facebook` | `ghl-social-reader` | `get-facebook-pages` |
+| `instagram` | `ghl-social-reader` | `get-instagram-accounts` |
+| `linkedin` | `ghl-social-reader` | `get-linkedin-accounts` |
+| `twitter` | `ghl-social-reader` | `get-twitter-profile` |
+| `tiktok` | `ghl-social-reader` | `get-tiktok-profile` |
+| `create_social_post` | `ghl-social-updater` | `create-post` |
+| `update_social_post` | `ghl-social-updater` | `update-post` |
+| `delete_social_post` | `ghl-social-updater` | `delete-post` |
+| `bulk_delete_social_posts` | `ghl-social-updater` | `bulk-delete-posts` |
+| `delete_social_account` | `ghl-social-updater` | `delete-account` |
+| `start_social_oauth` | `ghl-social-updater` | `start-oauth` |
+| `ghl_get_surveys` | `ghl-survey-reader` | `list` |
+| `ghl_get_survey_submissions` | `ghl-survey-reader` | `list-submissions` |
+| `list_invoices` | `ghl-invoice-reader` | `list` |
+| `get_invoice` | `ghl-invoice-reader` | `get` |
+| `list_estimates` | `ghl-invoice-reader` | `list-estimates` |
+| `list_invoice_templates` | `ghl-invoice-reader` | `list-templates` |
+| `get_invoice_template` | `ghl-invoice-reader` | `get-template` |
+| `list_invoice_schedules` | `ghl-invoice-reader` | `list-schedules` |
+| `get_invoice_schedule` | `ghl-invoice-reader` | `get-schedule` |
+| `create_invoice` | `ghl-invoice-updater` | `create` |
+| `send_invoice` | `ghl-invoice-updater` | `send-invoice` |
+| `create_estimate` | `ghl-invoice-updater` | `create-estimate` |
+| `send_estimate` | `ghl-invoice-updater` | `send-estimate` |
+| `create_invoice_from_estimate` | `ghl-invoice-updater` | `create-from-estimate` |
+| `create_invoice_template` | `ghl-invoice-updater` | `create-template` |
+| `update_invoice_template` | `ghl-invoice-updater` | `update-template` |
+| `delete_invoice_template` | `ghl-invoice-updater` | `delete-template` |
+| `create_invoice_schedule` | `ghl-invoice-updater` | `create-schedule` |
+| `generate_invoice_number` | `ghl-invoice-updater` | `generate-invoice-number` |
+| `generate_estimate_number` | `ghl-invoice-updater` | `generate-estimate-number` |
+
+**After slice 7: 123 upstream tool names → 18 routers + 126 operations** (still 3 `ghl-toolkit-help` ops). 19 facade tools registered on the host (was 13 after Phase 1).
 
 ### Worked example
 

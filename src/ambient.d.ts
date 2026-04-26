@@ -77,3 +77,57 @@ declare module "ghl-mcp-upstream/dist/tools/workflow-tools.js" {
     ): Promise<unknown>;
   }
 }
+
+// ─── Slice 7 (GTM) ──────────────────────────────────────────────────────
+
+declare module "ghl-mcp-upstream/dist/tools/social-media-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class SocialMediaTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/email-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class EmailTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/email-isv-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class EmailISVTools {
+    constructor(client: GHLApiClient);
+    executeTool(name: string, args: Record<string, unknown>): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/survey-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class SurveyTools {
+    constructor(client: GHLApiClient);
+    /**
+     * NOTE: SurveyTools uses `executeSurveyTool`, NOT `executeTool` (quirk).
+     */
+    executeSurveyTool(
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<unknown>;
+  }
+}
+
+declare module "ghl-mcp-upstream/dist/tools/invoices-tools.js" {
+  import { GHLApiClient } from "ghl-mcp-upstream/dist/clients/ghl-api-client.js";
+  export class InvoicesTools {
+    constructor(client: GHLApiClient);
+    /**
+     * NOTE: InvoicesTools uses `handleToolCall`, NOT `executeTool` (quirk).
+     */
+    handleToolCall(
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<unknown>;
+  }
+}
