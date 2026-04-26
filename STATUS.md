@@ -32,20 +32,28 @@ Each slice commit message includes the 5-hat composite. Phase 1 average across s
 | 9 | TypeScript strict, zero compile errors | ✅ | AC-9.1 / AC-9.2 / AC-9.3 ✅. tsconfig split: `tsconfig.json` (build) + `tsconfig.scripts.json` (lint scripts). |
 | 10 | Documentation | ✅ | AC-10.1 ✅ (README). AC-10.2 ✅ (operation-mapping.md auto-gen via `prebuild`). AC-10.3 ✅ (CLAUDE.md decisions log, 11+ entries). |
 
-**Phase 1 closed 2026-04-26.** All 10 stories ✅ except for AC-6.4 (write-path probe) which was deferred to Phase 1.5 in the original BRD §13.
+**Phase 1 closed 2026-04-26.** All 10 stories ✅. AC-6.4 (write-path probe) closed in Phase 1.5 (`v0.2.1-phase-1.5`).
+
+**Phase 2 closed 2026-04-26.** All 19 upstream tool classes wrapped, 259 ops behind 35 facade tools (`v0.3.4-phase-2`). Slices 7–11 covered: GTM (social + email + survey + invoice) → Revenue (products + payments + store) → Content (blog + media) → Custom Data (custom-field-v2 + objects + associations) → Phase 1 cleanup (48 missing ops in covered classes).
 
 ## Slices
 
-| Slice | Category | Routers | Ops | Composite | PR | Tag | Date |
-|---|---|---|---|---|---|---|---|
-| 1 | calendars (reader) | 1 | 6 | 9.9 | [#1](https://github.com/smorchestraai-code/salesmfast-ops-mcp/pull/1) | v0.1.0-vertical-slice | 2026-04-26 |
-| 2 | contacts (R+U) + factory + data-driven probe | 2 | 27 | 9.8 | _#2_ | _v0.2.0-phase-1_ | 2026-04-26 |
-| 3 | conversations (R+U) | 2 | 15 | 9.8 | _#2_ | _v0.2.0-phase-1_ | 2026-04-26 |
-| 4 | opportunities (R+U) | 2 | 8 | 9.8 | _#2_ | _v0.2.0-phase-1_ | 2026-04-26 |
-| 5 | location (R+U) | 2 | 14 | 9.6 | _#2_ | _v0.2.0-phase-1_ | 2026-04-26 |
-| 6 | workflow (R) + calendars-updater cleanup | 2 | 7 | 10.0 | _#2_ | _v0.2.0-phase-1_ | 2026-04-26 |
+| Slice | Category | Routers | Ops | Composite | PR | Tag |
+|---|---|---:|---:|---:|---|---|
+| 1 | calendars (reader) | 1 | 6 | 9.9 | [#1](https://github.com/smorchestraai-code/salesmfast-ops-mcp/pull/1) | v0.1.0-vertical-slice |
+| 2 | contacts (R+U) + factory + data-driven probe | 2 | 27 | 9.8 | #2 | v0.2.0-phase-1 |
+| 3 | conversations (R+U) | 2 | 15 | 9.8 | #2 | v0.2.0-phase-1 |
+| 4 | opportunities (R+U) | 2 | 8 | 9.8 | #2 | v0.2.0-phase-1 |
+| 5 | location (R+U) | 2 | 14 | 9.6 | #2 | v0.2.0-phase-1 |
+| 6 | workflow (R) + calendars-updater cleanup | 2 | 7 | 10.0 | #2 | v0.2.0-phase-1 |
+| **Phase 1.5** | write-path probe (AC-6.4) + MIGRATION.md | 0 | 0 | 10.0 | [#3](https://github.com/smorchestraai-code/salesmfast-ops-mcp/pull/3) | v0.2.1-phase-1.5 |
+| 7 | GTM (social + email + survey + invoice) | 7 | 46 | 10.0 | [#4](https://github.com/smorchestraai-code/salesmfast-ops-mcp/pull/4) | v0.3.0-slice-7-gtm |
+| 8 | Revenue (products + payments + store) | 6 | 48 | 9.6 | [#5](https://github.com/smorchestraai-code/salesmfast-ops-mcp/pull/5) | v0.3.1-slice-8-revenue |
+| 9 | Content (blog + media) | 4 | 10 | 9.5 | [#6](https://github.com/smorchestraai-code/salesmfast-ops-mcp/pull/6) | v0.3.2-slice-9-content |
+| 10 | Custom Data (custom-field-v2 + object + association) | 6 | 27 | 9.5 | [#7](https://github.com/smorchestraai-code/salesmfast-ops-mcp/pull/7) | v0.3.3-slice-10-custom-data |
+| 11 | Phase 1 cleanup (calendars + contacts + conversations + location + opportunities) | 0 | 48 | 9.5 | [#8](https://github.com/smorchestraai-code/salesmfast-ops-mcp/pull/8) | v0.3.4-phase-2 |
 
-**Totals:** 12 routers (5 read-only + 5 read-write categories + workflow read-only) + 1 help = **13 facade tools** vs upstream's ~280. Cap thesis fully proven.
+**Totals (Phase 2 close):** 34 routers + 1 help = **35 facade tools** vs upstream's 256 case-statement ops. **259 ops behind facade. 19/19 upstream classes wrapped.** Cap thesis fully proven (~7.3× collapse, well under 128 host cap). Composite avg across 12 PRs: **9.7 / 10**.
 
 ## DoD (BRD §11)
 
@@ -59,9 +67,9 @@ Each slice commit message includes the 5-hat composite. Phase 1 average across s
 | 6 | Claude Desktop swap verified live | ✅ slice 1 (2026-04-26) |
 | 7 | All 10 stories' ACs in STATUS.md | ✅ (this file) |
 
-## Open follow-ups
+## Open follow-ups (post Phase 2 close)
 
-- **AC-6.4** — write-path probe (create→get→delete on a contact). Opt-in per BRD §13. Phase 1.5.
-- **L-SMO-009** — re-enable location live-read assertion when a higher-scoped PIT is provisioned (current dev PIT lacks `locations.readonly`).
-- **Skill update** — `smorch-gtm-tools:ghl-operator` SKILL.md needs to switch from upstream `ghl-mcp` tool names to the new `ghl-{category}-{reader|updater}` router shape. Phase 2.
-- **Upstream `ghl-mcp` deprecation in `claude_desktop_config.json`** — already done for Mamoun's machine; document in README for other operators.
+- **L-SMO-009 PIT-scope re-enables** — when higher-scoped PITs are available, re-enable the live-read assertions for: location (slice 5), payments (slice 8), media (slice 9), custom-field-v2 (slice 10), and any other router-only entries.
+- **Skill propagation** — smorch-brain PR #13 (ghl-operator SKILL.md migration to facade) is OPEN awaiting review per branch protection on the canonical brain repo. Slice 7-11 router additions (28 new tools) need a follow-up SKILL.md amendment after PR #13 merges.
+- **Slice 7 / 8 op-level live-reads** — most slice 7-11 ops have router-only assertions. Operators using these per-client should run their own opt-in probes (similar to `npm run probe:write` for AC-6.4) to verify the live data path for their specific scope.
+- **Manifest size** — `src/operations.ts` is now ~2000 lines. Phase 2.5 cleanup: split per-category files under `src/operations/<category>.ts` with a barrel export.
