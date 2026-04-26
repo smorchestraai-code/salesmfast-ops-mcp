@@ -358,13 +358,76 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `upload-file` | `upload_media_file` | Upload a media file to the location's library. |
 | `delete-file` | `delete_media_file` | Delete a media file from the library. |
 
+## custom-field-v2
+
+### `ghl-custom-field-v2-reader` (2 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `get-by-id` | `ghl_get_custom_field_by_id` | Get a custom field definition by id. |
+| `get-by-object-key` | `ghl_get_custom_fields_by_object_key` | List all custom fields defined for a custom object (e.g., Company). |
+
+### `ghl-custom-field-v2-updater` (6 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-field` | `ghl_create_custom_field` | Create a new custom field. |
+| `update-field` | `ghl_update_custom_field` | Update an existing custom field. |
+| `delete-field` | `ghl_delete_custom_field` | Delete a custom field by id. |
+| `create-folder` | `ghl_create_custom_field_folder` | Create a custom field folder. |
+| `update-folder` | `ghl_update_custom_field_folder` | Update an existing custom field folder. |
+| `delete-folder` | `ghl_delete_custom_field_folder` | Delete a custom field folder by id. |
+
+## object
+
+### `ghl-object-reader` (4 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list` | `get_all_objects` | List all custom object schemas defined for the location. |
+| `get-schema` | `get_object_schema` | Get a single custom object schema by id. |
+| `get-record` | `get_object_record` | Get a single custom object record by id. |
+| `search-records` | `search_object_records` | Search custom object records with optional filters. |
+
+### `ghl-object-updater` (5 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-schema` | `create_object_schema` | Create a new custom object schema. |
+| `update-schema` | `update_object_schema` | Update an existing custom object schema. |
+| `create-record` | `create_object_record` | Create a new custom object record. |
+| `update-record` | `update_object_record` | Update an existing custom object record. |
+| `delete-record` | `delete_object_record` | Delete a custom object record by id. |
+
+## association
+
+### `ghl-association-reader` (5 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list` | `ghl_get_all_associations` | List all associations (custom-object relationship definitions) for the location. |
+| `get-by-id` | `ghl_get_association_by_id` | Get a single association by id. |
+| `get-by-key` | `ghl_get_association_by_key` | Get an association by its key. |
+| `get-by-object-key` | `ghl_get_association_by_object_key` | Get associations defined for a specific custom-object key. |
+| `get-relations-by-record` | `ghl_get_relations_by_record` | List relations (record-to-record links) for a single record. |
+
+### `ghl-association-updater` (5 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-association` | `ghl_create_association` | Create a new association definition. |
+| `update-association` | `ghl_update_association` | Update an existing association definition. |
+| `delete-association` | `ghl_delete_association` | Delete an association definition by id. |
+| `create-relation` | `ghl_create_relation` | Create a relation (record-to-record link via an association). |
+| `delete-relation` | `ghl_delete_relation` | Delete a relation by id. |
+
 ---
 
 ## Totals
 
-- Reader operations: **91**
-- Updater operations: **90**
-- Total: **181**
+- Reader operations: **102**
+- Updater operations: **106**
+- Total: **208**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.

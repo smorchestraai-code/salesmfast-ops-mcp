@@ -40,6 +40,16 @@ import { createStoreReader, createStoreUpdater } from "./store.js";
 // ─── Slice 9 (Content) ───
 import { createBlogReader, createBlogUpdater } from "./blog.js";
 import { createMediaReader, createMediaUpdater } from "./media.js";
+// ─── Slice 10 (Custom Data) ───
+import {
+  createCustomFieldV2Reader,
+  createCustomFieldV2Updater,
+} from "./custom-field-v2.js";
+import { createObjectReader, createObjectUpdater } from "./object.js";
+import {
+  createAssociationReader,
+  createAssociationUpdater,
+} from "./association.js";
 import { createHelp } from "./help.js";
 import type { RouterDef } from "./types.js";
 
@@ -203,6 +213,34 @@ export function buildRouters(
     }
     if (Object.keys(operations.media.updater).length > 0) {
       routers.push(createMediaUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  // ─── Slice 10 (Custom Data) ────
+  if (activeCategories.includes("custom-field-v2")) {
+    if (Object.keys(operations["custom-field-v2"].reader).length > 0) {
+      routers.push(createCustomFieldV2Reader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations["custom-field-v2"].updater).length > 0) {
+      routers.push(createCustomFieldV2Updater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("object")) {
+    if (Object.keys(operations.object.reader).length > 0) {
+      routers.push(createObjectReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.object.updater).length > 0) {
+      routers.push(createObjectUpdater(upstream, env.deniedOps));
+    }
+  }
+
+  if (activeCategories.includes("association")) {
+    if (Object.keys(operations.association.reader).length > 0) {
+      routers.push(createAssociationReader(upstream, env.deniedOps));
+    }
+    if (Object.keys(operations.association.updater).length > 0) {
+      routers.push(createAssociationUpdater(upstream, env.deniedOps));
     }
   }
 

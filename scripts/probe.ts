@@ -212,6 +212,38 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
     // would either need a known fixture (none on dev) or accept the upstream
     // validation envelope. Router-only for now; verify via opt-in probe later.
   },
+  // ─── Slice 10 (Custom Data) ───────────────────────────────────────────
+  {
+    category: "custom-field-v2",
+    expectedRouters: [
+      "ghl-custom-field-v2-reader",
+      "ghl-custom-field-v2-updater",
+    ],
+    // No liveRead: get-by-id needs an id; get-by-object-key needs a custom
+    // object key. Router-only on dev; use opt-in probe per Company-keyed call.
+  },
+  {
+    category: "object",
+    expectedRouters: ["ghl-object-reader", "ghl-object-updater"],
+    liveRead: {
+      router: "ghl-object-reader",
+      operation: "list",
+      // Preflight-verified: dev location has Company schema id 67cec41d11ea7017a8c72a33
+      expectFragment: "67cec41d11ea7017a8c72a33",
+      label: "ghl-object-reader list returned 67cec41d11ea7017a8c72a33",
+    },
+  },
+  {
+    category: "association",
+    expectedRouters: ["ghl-association-reader", "ghl-association-updater"],
+    liveRead: {
+      router: "ghl-association-reader",
+      operation: "list",
+      // Preflight-verified: dev location has association id 69300cf3543a0284b8fe70f5
+      expectFragment: "69300cf3543a0284b8fe70f5",
+      label: "ghl-association-reader list returned 69300cf3543a0284b8fe70f5",
+    },
+  },
   {
     category: "location",
     expectedRouters: ["ghl-location-reader", "ghl-location-updater"],
