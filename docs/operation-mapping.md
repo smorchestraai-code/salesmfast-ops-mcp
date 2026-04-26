@@ -240,13 +240,97 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `generate-invoice-number` | `generate_invoice_number` | Reserve and return the next invoice number for the location. Note: claims a number from the sequence (mutates state). |
 | `generate-estimate-number` | `generate_estimate_number` | Reserve and return the next estimate number for the location. Note: claims a number from the sequence (mutates state). |
 
+## products
+
+### `ghl-products-reader` (5 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list` | `ghl_list_products` | List products in the location. |
+| `get` | `ghl_get_product` | Get a single product by id. |
+| `list-prices` | `ghl_list_prices` | List prices for a product. |
+| `list-collections` | `ghl_list_product_collections` | List product collections in the location. |
+| `list-inventory` | `ghl_list_inventory` | List product inventory levels. |
+
+### `ghl-products-updater` (5 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create` | `ghl_create_product` | Create a new product. |
+| `update` | `ghl_update_product` | Update an existing product. |
+| `delete` | `ghl_delete_product` | Delete a product by id. |
+| `create-price` | `ghl_create_price` | Create a new price (variant/SKU) on a product. |
+| `create-collection` | `ghl_create_product_collection` | Create a new product collection. |
+
+## payments
+
+### `ghl-payments-reader` (11 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list-orders` | `list_orders` | List orders (one-time purchases) for the location. |
+| `get-order` | `get_order_by_id` | Get a single order by id. |
+| `list-fulfillments` | `list_order_fulfillments` | List fulfillment records for an order. |
+| `list-subscriptions` | `list_subscriptions` | List subscriptions for the location. |
+| `get-subscription` | `get_subscription_by_id` | Get a single subscription by id. |
+| `list-transactions` | `list_transactions` | List payment transactions. |
+| `get-transaction` | `get_transaction_by_id` | Get a single transaction by id. |
+| `list-coupons` | `list_coupons` | List coupons defined for the location. |
+| `get-coupon` | `get_coupon` | Get a single coupon by id. |
+| `get-custom-provider-config` | `get_custom_provider_config` | Get the custom payment provider config. |
+| `list-whitelabel-providers` | `list_whitelabel_integration_providers` | List whitelabel integration providers. |
+
+### `ghl-payments-updater` (9 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-fulfillment` | `create_order_fulfillment` | Create a fulfillment record for an order. |
+| `create-coupon` | `create_coupon` | Create a new coupon. |
+| `update-coupon` | `update_coupon` | Update an existing coupon. |
+| `delete-coupon` | `delete_coupon` | Delete a coupon by id. |
+| `create-custom-provider-config` | `create_custom_provider_config` | Create the custom payment provider config. |
+| `disconnect-custom-provider-config` | `disconnect_custom_provider_config` | Disconnect the custom payment provider config. |
+| `create-custom-provider-integration` | `create_custom_provider_integration` | Create a custom payment provider integration. |
+| `delete-custom-provider-integration` | `delete_custom_provider_integration` | Delete a custom payment provider integration. |
+| `create-whitelabel-provider` | `create_whitelabel_integration_provider` | Create a whitelabel integration provider. |
+
+## store
+
+### `ghl-store-reader` (8 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list-shipping-zones` | `ghl_list_shipping_zones` | List shipping zones for the location. |
+| `get-shipping-zone` | `ghl_get_shipping_zone` | Get a single shipping zone by id. |
+| `list-shipping-rates` | `ghl_list_shipping_rates` | List shipping rates for a zone. |
+| `get-shipping-rate` | `ghl_get_shipping_rate` | Get a single shipping rate by id. |
+| `list-shipping-carriers` | `ghl_list_shipping_carriers` | List shipping carriers for the location. |
+| `get-shipping-carrier` | `ghl_get_shipping_carrier` | Get a single shipping carrier by id. |
+| `get-available-rates` | `ghl_get_available_shipping_rates` | Get available shipping rates for an order (matches zone+rate config). |
+| `get-store-setting` | `ghl_get_store_setting` | Get the store-level settings (store id, etc.). |
+
+### `ghl-store-updater` (10 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `create-shipping-zone` | `ghl_create_shipping_zone` | Create a new shipping zone. |
+| `update-shipping-zone` | `ghl_update_shipping_zone` | Update an existing shipping zone. |
+| `delete-shipping-zone` | `ghl_delete_shipping_zone` | Delete a shipping zone by id. |
+| `create-shipping-rate` | `ghl_create_shipping_rate` | Create a new shipping rate (within a zone). |
+| `update-shipping-rate` | `ghl_update_shipping_rate` | Update an existing shipping rate. |
+| `delete-shipping-rate` | `ghl_delete_shipping_rate` | Delete a shipping rate by id. |
+| `create-shipping-carrier` | `ghl_create_shipping_carrier` | Create a new shipping carrier. |
+| `update-shipping-carrier` | `ghl_update_shipping_carrier` | Update an existing shipping carrier. |
+| `delete-shipping-carrier` | `ghl_delete_shipping_carrier` | Delete a shipping carrier by id. |
+| `create-store-setting` | `ghl_create_store_setting` | Create the store-level settings record. |
+
 ---
 
 ## Totals
 
-- Reader operations: **61**
-- Updater operations: **62**
-- Total: **123**
+- Reader operations: **85**
+- Updater operations: **86**
+- Total: **171**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.

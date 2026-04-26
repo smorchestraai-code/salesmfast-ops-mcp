@@ -222,6 +222,61 @@ Every old tool name maps to one operation under one router. The router's input i
 
 **After slice 7: 123 upstream tool names → 18 routers + 126 operations** (still 3 `ghl-toolkit-help` ops). 19 facade tools registered on the host (was 13 after Phase 1).
 
+#### Slice 8 — Revenue (added 2026-04-26, tag `v0.3.1-slice-8-revenue`)
+
+| Old (`mcp__ghl-mcp__<name>`) | New router | New operation |
+|---|---|---|
+| `ghl_list_products` | `ghl-products-reader` | `list` |
+| `ghl_get_product` | `ghl-products-reader` | `get` |
+| `ghl_list_prices` | `ghl-products-reader` | `list-prices` |
+| `ghl_list_product_collections` | `ghl-products-reader` | `list-collections` |
+| `ghl_list_inventory` | `ghl-products-reader` | `list-inventory` |
+| `ghl_create_product` | `ghl-products-updater` | `create` |
+| `ghl_update_product` | `ghl-products-updater` | `update` |
+| `ghl_delete_product` | `ghl-products-updater` | `delete` |
+| `ghl_create_price` | `ghl-products-updater` | `create-price` |
+| `ghl_create_product_collection` | `ghl-products-updater` | `create-collection` |
+| `list_orders` | `ghl-payments-reader` | `list-orders` |
+| `get_order_by_id` | `ghl-payments-reader` | `get-order` |
+| `list_order_fulfillments` | `ghl-payments-reader` | `list-fulfillments` |
+| `list_subscriptions` | `ghl-payments-reader` | `list-subscriptions` |
+| `get_subscription_by_id` | `ghl-payments-reader` | `get-subscription` |
+| `list_transactions` | `ghl-payments-reader` | `list-transactions` |
+| `get_transaction_by_id` | `ghl-payments-reader` | `get-transaction` |
+| `list_coupons` | `ghl-payments-reader` | `list-coupons` |
+| `get_coupon` | `ghl-payments-reader` | `get-coupon` |
+| `get_custom_provider_config` | `ghl-payments-reader` | `get-custom-provider-config` |
+| `list_whitelabel_integration_providers` | `ghl-payments-reader` | `list-whitelabel-providers` |
+| `create_order_fulfillment` | `ghl-payments-updater` | `create-fulfillment` |
+| `create_coupon` | `ghl-payments-updater` | `create-coupon` |
+| `update_coupon` | `ghl-payments-updater` | `update-coupon` |
+| `delete_coupon` | `ghl-payments-updater` | `delete-coupon` |
+| `create_custom_provider_config` | `ghl-payments-updater` | `create-custom-provider-config` |
+| `disconnect_custom_provider_config` | `ghl-payments-updater` | `disconnect-custom-provider-config` |
+| `create_custom_provider_integration` | `ghl-payments-updater` | `create-custom-provider-integration` |
+| `delete_custom_provider_integration` | `ghl-payments-updater` | `delete-custom-provider-integration` |
+| `create_whitelabel_integration_provider` | `ghl-payments-updater` | `create-whitelabel-provider` |
+| `ghl_list_shipping_zones` | `ghl-store-reader` | `list-shipping-zones` |
+| `ghl_get_shipping_zone` | `ghl-store-reader` | `get-shipping-zone` |
+| `ghl_list_shipping_rates` | `ghl-store-reader` | `list-shipping-rates` |
+| `ghl_get_shipping_rate` | `ghl-store-reader` | `get-shipping-rate` |
+| `ghl_list_shipping_carriers` | `ghl-store-reader` | `list-shipping-carriers` |
+| `ghl_get_shipping_carrier` | `ghl-store-reader` | `get-shipping-carrier` |
+| `ghl_get_available_shipping_rates` | `ghl-store-reader` | `get-available-rates` |
+| `ghl_get_store_setting` | `ghl-store-reader` | `get-store-setting` |
+| `ghl_create_shipping_zone` | `ghl-store-updater` | `create-shipping-zone` |
+| `ghl_update_shipping_zone` | `ghl-store-updater` | `update-shipping-zone` |
+| `ghl_delete_shipping_zone` | `ghl-store-updater` | `delete-shipping-zone` |
+| `ghl_create_shipping_rate` | `ghl-store-updater` | `create-shipping-rate` |
+| `ghl_update_shipping_rate` | `ghl-store-updater` | `update-shipping-rate` |
+| `ghl_delete_shipping_rate` | `ghl-store-updater` | `delete-shipping-rate` |
+| `ghl_create_shipping_carrier` | `ghl-store-updater` | `create-shipping-carrier` |
+| `ghl_update_shipping_carrier` | `ghl-store-updater` | `update-shipping-carrier` |
+| `ghl_delete_shipping_carrier` | `ghl-store-updater` | `delete-shipping-carrier` |
+| `ghl_create_store_setting` | `ghl-store-updater` | `create-store-setting` |
+
+**After slice 8: 171 upstream tool names → 24 routers + 174 operations** (still 3 `ghl-toolkit-help` ops). 25 facade tools registered on the host. Note: `ghl-payments-reader` requires payments.readonly scope on the PIT — dev PIT lacks this (precedent L-SMO-009).
+
 ### Worked example
 
 **Old call:**

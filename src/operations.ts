@@ -52,6 +52,10 @@ export const ALL_CATEGORIES = [
   "social-media",
   "survey",
   "invoice",
+  // ─── Slice 8 (Revenue) ────
+  "products",
+  "payments",
+  "store",
 ] as const;
 
 export type CategoryName = (typeof ALL_CATEGORIES)[number];
@@ -1374,6 +1378,438 @@ export const operations: Manifest = {
         upstream: "generate_estimate_number",
         description:
           "Reserve and return the next estimate number for the location. Note: claims a number from the sequence (mutates state).",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  // ─── Slice 8 (Revenue) ────────────────────────────────────────────────
+  products: {
+    reader: {
+      list: {
+        upstream: "ghl_list_products",
+        description: "List products in the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      get: {
+        upstream: "ghl_get_product",
+        description: "Get a single product by id.",
+        params: [
+          {
+            name: "productId",
+            type: "string",
+            required: true,
+            description: "Product id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-prices": {
+        upstream: "ghl_list_prices",
+        description: "List prices for a product.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-collections": {
+        upstream: "ghl_list_product_collections",
+        description: "List product collections in the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-inventory": {
+        upstream: "ghl_list_inventory",
+        description: "List product inventory levels.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      create: {
+        upstream: "ghl_create_product",
+        description: "Create a new product.",
+        params: [],
+        additionalProperties: true,
+      },
+      update: {
+        upstream: "ghl_update_product",
+        description: "Update an existing product.",
+        params: [
+          {
+            name: "productId",
+            type: "string",
+            required: true,
+            description: "Product id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      delete: {
+        upstream: "ghl_delete_product",
+        description: "Delete a product by id.",
+        params: [
+          {
+            name: "productId",
+            type: "string",
+            required: true,
+            description: "Product id.",
+          },
+        ],
+      },
+      "create-price": {
+        upstream: "ghl_create_price",
+        description: "Create a new price (variant/SKU) on a product.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-collection": {
+        upstream: "ghl_create_product_collection",
+        description: "Create a new product collection.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  payments: {
+    reader: {
+      "list-orders": {
+        upstream: "list_orders",
+        description: "List orders (one-time purchases) for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-order": {
+        upstream: "get_order_by_id",
+        description: "Get a single order by id.",
+        params: [
+          {
+            name: "orderId",
+            type: "string",
+            required: true,
+            description: "Order id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-fulfillments": {
+        upstream: "list_order_fulfillments",
+        description: "List fulfillment records for an order.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-subscriptions": {
+        upstream: "list_subscriptions",
+        description: "List subscriptions for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-subscription": {
+        upstream: "get_subscription_by_id",
+        description: "Get a single subscription by id.",
+        params: [
+          {
+            name: "subscriptionId",
+            type: "string",
+            required: true,
+            description: "Subscription id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-transactions": {
+        upstream: "list_transactions",
+        description: "List payment transactions.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-transaction": {
+        upstream: "get_transaction_by_id",
+        description: "Get a single transaction by id.",
+        params: [
+          {
+            name: "transactionId",
+            type: "string",
+            required: true,
+            description: "Transaction id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-coupons": {
+        upstream: "list_coupons",
+        description: "List coupons defined for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-coupon": {
+        upstream: "get_coupon",
+        description: "Get a single coupon by id.",
+        params: [
+          {
+            name: "couponId",
+            type: "string",
+            required: true,
+            description: "Coupon id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "get-custom-provider-config": {
+        upstream: "get_custom_provider_config",
+        description: "Get the custom payment provider config.",
+        params: [],
+        additionalProperties: true,
+      },
+      "list-whitelabel-providers": {
+        upstream: "list_whitelabel_integration_providers",
+        description: "List whitelabel integration providers.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      "create-fulfillment": {
+        upstream: "create_order_fulfillment",
+        description: "Create a fulfillment record for an order.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-coupon": {
+        upstream: "create_coupon",
+        description: "Create a new coupon.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-coupon": {
+        upstream: "update_coupon",
+        description: "Update an existing coupon.",
+        params: [
+          {
+            name: "couponId",
+            type: "string",
+            required: true,
+            description: "Coupon id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-coupon": {
+        upstream: "delete_coupon",
+        description: "Delete a coupon by id.",
+        params: [
+          {
+            name: "couponId",
+            type: "string",
+            required: true,
+            description: "Coupon id.",
+          },
+        ],
+      },
+      "create-custom-provider-config": {
+        upstream: "create_custom_provider_config",
+        description: "Create the custom payment provider config.",
+        params: [],
+        additionalProperties: true,
+      },
+      "disconnect-custom-provider-config": {
+        upstream: "disconnect_custom_provider_config",
+        description: "Disconnect the custom payment provider config.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-custom-provider-integration": {
+        upstream: "create_custom_provider_integration",
+        description: "Create a custom payment provider integration.",
+        params: [],
+        additionalProperties: true,
+      },
+      "delete-custom-provider-integration": {
+        upstream: "delete_custom_provider_integration",
+        description: "Delete a custom payment provider integration.",
+        params: [],
+        additionalProperties: true,
+      },
+      "create-whitelabel-provider": {
+        upstream: "create_whitelabel_integration_provider",
+        description: "Create a whitelabel integration provider.",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+  },
+
+  store: {
+    reader: {
+      "list-shipping-zones": {
+        upstream: "ghl_list_shipping_zones",
+        description: "List shipping zones for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-shipping-zone": {
+        upstream: "ghl_get_shipping_zone",
+        description: "Get a single shipping zone by id.",
+        params: [
+          {
+            name: "zoneId",
+            type: "string",
+            required: true,
+            description: "Shipping zone id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-shipping-rates": {
+        upstream: "ghl_list_shipping_rates",
+        description: "List shipping rates for a zone.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-shipping-rate": {
+        upstream: "ghl_get_shipping_rate",
+        description: "Get a single shipping rate by id.",
+        params: [
+          {
+            name: "rateId",
+            type: "string",
+            required: true,
+            description: "Shipping rate id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-shipping-carriers": {
+        upstream: "ghl_list_shipping_carriers",
+        description: "List shipping carriers for the location.",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-shipping-carrier": {
+        upstream: "ghl_get_shipping_carrier",
+        description: "Get a single shipping carrier by id.",
+        params: [
+          {
+            name: "carrierId",
+            type: "string",
+            required: true,
+            description: "Shipping carrier id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "get-available-rates": {
+        upstream: "ghl_get_available_shipping_rates",
+        description:
+          "Get available shipping rates for an order (matches zone+rate config).",
+        params: [],
+        additionalProperties: true,
+      },
+      "get-store-setting": {
+        upstream: "ghl_get_store_setting",
+        description: "Get the store-level settings (store id, etc.).",
+        params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {
+      "create-shipping-zone": {
+        upstream: "ghl_create_shipping_zone",
+        description: "Create a new shipping zone.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-shipping-zone": {
+        upstream: "ghl_update_shipping_zone",
+        description: "Update an existing shipping zone.",
+        params: [
+          {
+            name: "zoneId",
+            type: "string",
+            required: true,
+            description: "Shipping zone id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-shipping-zone": {
+        upstream: "ghl_delete_shipping_zone",
+        description: "Delete a shipping zone by id.",
+        params: [
+          {
+            name: "zoneId",
+            type: "string",
+            required: true,
+            description: "Shipping zone id.",
+          },
+        ],
+      },
+      "create-shipping-rate": {
+        upstream: "ghl_create_shipping_rate",
+        description: "Create a new shipping rate (within a zone).",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-shipping-rate": {
+        upstream: "ghl_update_shipping_rate",
+        description: "Update an existing shipping rate.",
+        params: [
+          {
+            name: "rateId",
+            type: "string",
+            required: true,
+            description: "Shipping rate id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-shipping-rate": {
+        upstream: "ghl_delete_shipping_rate",
+        description: "Delete a shipping rate by id.",
+        params: [
+          {
+            name: "rateId",
+            type: "string",
+            required: true,
+            description: "Shipping rate id.",
+          },
+        ],
+      },
+      "create-shipping-carrier": {
+        upstream: "ghl_create_shipping_carrier",
+        description: "Create a new shipping carrier.",
+        params: [],
+        additionalProperties: true,
+      },
+      "update-shipping-carrier": {
+        upstream: "ghl_update_shipping_carrier",
+        description: "Update an existing shipping carrier.",
+        params: [
+          {
+            name: "carrierId",
+            type: "string",
+            required: true,
+            description: "Shipping carrier id.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "delete-shipping-carrier": {
+        upstream: "ghl_delete_shipping_carrier",
+        description: "Delete a shipping carrier by id.",
+        params: [
+          {
+            name: "carrierId",
+            type: "string",
+            required: true,
+            description: "Shipping carrier id.",
+          },
+        ],
+      },
+      "create-store-setting": {
+        upstream: "ghl_create_store_setting",
+        description: "Create the store-level settings record.",
         params: [],
         additionalProperties: true,
       },
