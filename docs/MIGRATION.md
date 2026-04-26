@@ -328,6 +328,22 @@ Every old tool name maps to one operation under one router. The router's input i
 
 **After slice 10: 208 upstream tool names → 34 routers + 211 operations**. 35 facade tools. **All 19 upstream tool classes wrapped (100% class coverage).** Phase 2 still has slice 11 (cleanup of missed ops in Phase 1 categories) to add the final ~48 ops.
 
+#### Slice 11 — Phase 1 cleanup (added 2026-04-26, tag `v0.3.4-phase-2`)
+
+48 ops added to existing routers — no new routers. Mappings:
+
+**Contacts (4):** `add_contact_followers` → `add-followers` · `remove_contact_followers` → `remove-followers` · `bulk_update_contact_business` → `bulk-update-business` · `bulk_update_contact_tags` → `bulk-update-tags` (all under `ghl-contacts-updater`)
+
+**Conversations (5):** `get_message_transcription` → `get-message-transcription` · `download_transcription` → `download-transcription` (under `ghl-conversations-reader`) · `add_inbound_message` → `add-inbound-message` · `add_outbound_call` → `add-outbound-call` · `live_chat_typing` → `live-chat-typing` (under `ghl-conversations-updater`)
+
+**Calendars (27):** 8 reader ops (blocked-slots, appointment-notes, resources rooms+equipment lists+gets, notifications list+get) + 19 updater ops (block slots CRUD, calendar group CRUD + disable + validate-slug, appointment notes CRUD, resource rooms CRUD, resource equipment CRUD, notifications CRUD)
+
+**Location (10):** all under `ghl-location-updater` — `create_location` · `update_location` · `delete_location` · custom field CRUD (3) · custom value CRUD (3) · `delete_location_template`
+
+**Opportunities (2):** `add_opportunity_followers` → `add-followers` · `remove_opportunity_followers` → `remove-followers` (both under `ghl-opportunities-updater`)
+
+**After slice 11 (Phase 2 close): 256 upstream tool names → 34 routers + 259 operations**. 35 facade tools. **100% class + ~100% op coverage** (the upstream tool count was originally said to be ~226-280; after counting case statements it's 256). Cap thesis cleanly proven: ~256 → 35 (= 7.3× collapse, still well below the 128 host cap).
+
 ### Worked example
 
 **Old call:**
