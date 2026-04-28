@@ -316,19 +316,20 @@ mcp__salesmfast-ops__ghl-conversations-updater({
 **Routers:** `ghl-location-reader` (11 ops) + `ghl-location-updater` (13 ops)
 **What it controls:** location-level config — tags, custom fields, custom values, templates, timezones.
 
-> ⚠️ **Param-passing quirk:** every reader op needs `params.locationId` — the upstream extracts it explicitly. See [Param-passing quirks](#param-passing-quirks).
+> ✅ **As of v1.1.1:** `locationId` is auto-injected from `GHL_LOCATION_ID` — you only need to pass it if you want to override the configured location. See [Param-passing quirks](#param-passing-quirks).
 
-| Common operation | Router | Op | Required params |
+| Common operation | Router | Op | Params |
 |---|---|---|---|
-| List location tags | reader | `list-tags` | `locationId` |
-| List custom fields | reader | `list-custom-fields` | `locationId` |
-| List custom values | reader | `list-custom-values` | `locationId` |
-| List templates | reader | `list-templates` | `locationId` |
-| List timezones | reader | `list-timezones` | `locationId` |
-| Create tag | updater | `create-tag` | `name` |
-| Update tag | updater | `update-tag` | `tagId` |
+| List location tags | reader | `list-tags` | (none — `locationId` auto-injected) |
+| List custom fields | reader | `list-custom-fields` | (none — auto-injected) |
+| List custom values | reader | `list-custom-values` | (none — auto-injected) |
+| List templates | reader | `list-templates` | (none — auto-injected) |
+| List timezones | reader | `list-timezones` | (none — auto-injected) |
+| Create tag | updater | `create-tag` | `name` (locationId auto-injected) |
+| Update tag | updater | `update-tag` | `tagId`, `name` |
 | Delete tag | updater | `delete-tag` | `tagId` |
 | Create / update / delete custom field | updater | `create-custom-field` etc. | (varies) |
+| **Search across locations** | ❌ blocked | `search` | Agency-only — pre-blocked under PIT auth |
 
 **Use case:** auditing tag taxonomy across clients, defining custom fields used by signals.
 
@@ -491,17 +492,17 @@ mcp__salesmfast-ops__ghl-invoice-updater({
 **Routers:** `ghl-payments-reader` (11 ops) + `ghl-payments-updater` (9 ops)
 **What it controls:** orders, subscriptions, transactions, coupons, fulfillments, custom payment providers, whitelabel integrations.
 
-> ⚠️ **Param-passing quirk:** every payments op needs `params.altId` (= location id) and `params.altType: "location"`. Without these, the upstream API rejects with 403.
+> ✅ **As of v1.1.1:** `altId` (= location id) and `altType: "location"` are auto-injected from `GHL_LOCATION_ID`. You only need to pass them if you want to query a different location/altType.
 
-| Operation | Router | Op | Required params |
+| Operation | Router | Op | Params |
 |---|---|---|---|
-| List orders | reader | `list-orders` | `altId`, `altType` |
+| List orders | reader | `list-orders` | (none — `altId`+`altType` auto-injected) |
 | Get order | reader | `get-order` | `orderId` |
-| List subscriptions | reader | `list-subscriptions` | `altId`, `altType` |
+| List subscriptions | reader | `list-subscriptions` | (none — auto-injected) |
 | Get subscription | reader | `get-subscription` | `subscriptionId` |
-| List transactions | reader | `list-transactions` | `altId`, `altType` |
+| List transactions | reader | `list-transactions` | (none — auto-injected) |
 | Get transaction | reader | `get-transaction` | `transactionId` |
-| List / get coupons | reader | `list-coupons` / `get-coupon` | `altId`, `altType` (list) / `couponId` (get) |
+| List / get coupons | reader | `list-coupons` / `get-coupon` | (none for list — auto-injected) / `couponId` (get) |
 | List fulfillments | reader | `list-fulfillments` | `orderId` |
 | Create order fulfillment | updater | `create-fulfillment` | — |
 | Create / update / delete coupon | updater | `create-coupon` / `update-coupon` / `delete-coupon` | (varies) |
@@ -509,10 +510,11 @@ mcp__salesmfast-ops__ghl-invoice-updater({
 **Worked example — recent revenue:**
 
 ```js
+// v1.1.1 — altId + altType auto-injected from GHL_LOCATION_ID.
 mcp__salesmfast-ops__ghl-payments-reader({
   selectSchema: {
     operation: "list-orders",
-    params: { altId: "<your-location-id>", altType: "location", limit: 20 }
+    params: { limit: 20 }
   }
 })
 // → { data: [{ amount, currency, contactName, status, ... }, ...], totalCount }
@@ -637,16 +639,26 @@ The `key` field in each result is what you pass to `custom-field-v2-reader.get-b
 
 ## Param-passing quirks
 
-The upstream tool wrappers extract some params explicitly (they're NOT auto-injected from the configured location):
+> **v1.1.1 update — auto-inject is on.** As of v1.1.1, the location, payments, products, and store routers auto-inject `locationId` / `altId` / `altType` from your configured `GHL_LOCATION_ID`. You no longer need to pass them on every call. They're still accepted as overrides if you ever need to call cross-location.
 
-| Category | Required param(s) | Why |
+| Category | Behaviour | Override |
 |---|---|---|
-| `ghl-location-reader.*` | `locationId` | Upstream's `LocationTools.getLocationTags(params.locationId)` etc. |
-| `ghl-payments-reader.*` (list ops) | `altId` + `altType: "location"` | Upstream passes args verbatim as query params; GHL's payments API uses the alt-id pattern |
-| `ghl-custom-field-v2-reader.get-by-object-key` | `objectKey` (and it must be a `custom_objects.*` key, NOT `contact` / `opportunity`) | The v2 API only supports custom objects; SYSTEM-defined types use the legacy custom-fields surface |
-| `ghl-object-reader.list` | **none** (do NOT pass locationId — schema rejects it) | The op uses the configured location implicitly |
+| `ghl-location-reader.*` and `ghl-location-updater.*` | `locationId` is auto-injected from `GHL_LOCATION_ID` | Pass `locationId` explicitly to override |
+| `ghl-payments-reader.*` and `ghl-payments-updater.*` | `altId` is auto-injected (= `GHL_LOCATION_ID`); `altType` defaults to `"location"` | Pass either explicitly to override |
+| `ghl-products-reader.*` and `ghl-products-updater.*` | `locationId` auto-injected | Pass to override |
+| `ghl-store-reader.*` and `ghl-store-updater.*` | `altId` + `altType: "location"` auto-injected | Pass to override |
+| `ghl-custom-field-v2-reader.get-by-object-key` | `objectKey` is required AND must be a `custom_objects.*` key — `contact` and `opportunity` are pre-blocked at the router with a redirect to the v1 endpoint | Use `ghl-location-reader.list-custom-fields` for contacts; `ghl-opportunities-reader.search` (read `customFields[]` on each opportunity) for opportunities |
+| `ghl-object-reader.list` | Strict schema, accepts no params | None — call with empty params |
 
-If you hit `400 must NOT have additional properties` or `403 Forbidden`, the param shape is the most likely cause — call `describe-operation` to see the exact schema.
+### Agency-only operations (pre-blocked under PIT auth)
+
+PITs (Private Integration Tokens) are **location-scoped**. Operations that hit agency-level endpoints will always 403. As of v1.1.1, these are pre-blocked at the router with an actionable error rather than a cryptic 403:
+
+| Operation | Why it's blocked | Use instead |
+|---|---|---|
+| `ghl-location-reader.search` | Hits `/locations/search` — agency-only endpoint that returns sub-locations across an entire agency | Use `ghl-location-reader.get` for the configured location, or any other location-reader op (which now auto-uses your configured `locationId`) |
+
+If you hit `400 must NOT have additional properties` on a strict op, you passed an unknown key — call `describe-operation` to see the exact schema.
 
 ---
 
@@ -656,7 +668,8 @@ If you hit `400 must NOT have additional properties` or `403 Forbidden`, the par
 |---|---|---|
 | `npm run probe` fails on first run with "dist/server.js not found" | Build hasn't run yet | `npm run build` |
 | Probe fails with `[upstream <category>] 4xx Forbidden` | PIT lacks scope for that category | Regenerate PIT in GHL Settings → Private Integrations with **all scopes** granted |
-| Probe fails with `[upstream <category>] ... locationId/undefined/...` | Forgot `params.locationId` for a location op | Pass `locationId` explicitly (see [Param-passing quirks](#param-passing-quirks)) |
+| `[upstream location] ... locationId/undefined/...` | `GHL_LOCATION_ID` is missing or empty in `.env` | Check `.env` — auto-inject only works when `GHL_LOCATION_ID` is set. Re-run `bash install.sh` if needed. |
+| `Operation "search" requires an agency OAuth token` | You called an agency-only op with a PIT | Use the location-scoped equivalent (e.g., `ghl-location-reader.get` or any other location reader op) — see [Agency-only operations](#agency-only-operations-pre-blocked-under-pit-auth) |
 | `must NOT have additional properties` on a call | Schema is strict — you passed an unknown key | Call `ghl-toolkit-help describe-operation` for the exact schema |
 | `Invalid object key` on custom-field-v2 | You used `contact` / `opportunity` / a non-existent key | Use a `custom_objects.*` key from `ghl-object-reader.list` |
 | 35 tools don't appear in Claude Desktop after install | Desktop wasn't fully quit | Cmd+Q (Mac) or close all windows (Win); then reopen |

@@ -186,16 +186,14 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
     liveRead: {
       router: "ghl-payments-reader",
       operation: "list-orders",
-      // Upstream's PaymentsTools.listOrders passes args verbatim as query
-      // params — needs altId + altType + (optional) limit.
-      params: {
-        altId: "UNw9DraGO3eyEa5l4lkJ",
-        altType: "location",
-        limit: 1,
-      },
+      // v1.1.1 regression test: altId + altType are auto-injected from
+      // env.locationId by the payments router's contextDefaults. Caller
+      // only supplies the user-meaningful params (limit). If auto-inject
+      // breaks, this probe fails.
+      params: { limit: 1 },
       expectFragment: "69cd80b81034639d37cb3e6f",
       label:
-        "ghl-payments-reader list-orders returned 69cd80b81034639d37cb3e6f",
+        "ghl-payments-reader list-orders returned 69cd80b81034639d37cb3e6f (auto-inject altId/altType)",
     },
   },
   {
@@ -287,12 +285,13 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
     liveRead: {
       router: "ghl-location-reader",
       operation: "list-tags",
-      // Upstream's LocationTools.getLocationTags expects `params.locationId` —
-      // it's not auto-injected from the GHLApiClient config. Same pattern for
-      // most location ops.
-      params: { locationId: "UNw9DraGO3eyEa5l4lkJ" },
+      // v1.1.1 regression test: locationId is auto-injected from
+      // env.locationId by the location router's contextDefaults. Caller
+      // supplies no params at all. If auto-inject breaks, the upstream
+      // returns /locations/undefined/tags → 401 and this probe fails.
       expectFragment: "os2scn2e9L8PAaNhxy1l",
-      label: "ghl-location-reader list-tags returned os2scn2e9L8PAaNhxy1l",
+      label:
+        "ghl-location-reader list-tags returned os2scn2e9L8PAaNhxy1l (auto-inject locationId)",
     },
   },
   {
@@ -456,6 +455,52 @@ async function main(): Promise<void> {
         "invalid params returned InvalidParams (bogus)",
         ok,
         `error: ${err.message.slice(0, 200)}`,
+      );
+    }
+
+    // v1.1.1 — Negative: agency-only op (location.search) is pre-blocked
+    // with an actionable InvalidParams message instead of letting it 403.
+    {
+      const err = await expectThrow(
+        a.request("tools/call", {
+          name: "ghl-location-reader",
+          arguments: { selectSchema: { operation: "search" } },
+        }),
+      );
+      const msg = err.message.toLowerCase();
+      const ok =
+        msg.includes("agency") &&
+        msg.includes("pit") &&
+        msg.includes("location-scoped");
+      record(
+        "agency-only op (ghl-location-reader.search) pre-blocked with helpful message",
+        ok,
+        `error: ${err.message.slice(0, 220)}`,
+      );
+    }
+
+    // v1.1.1 — Negative: custom-field-v2 with objectKey="contact" pre-blocks
+    // with a redirect to ghl-location-reader.list-custom-fields.
+    {
+      const err = await expectThrow(
+        a.request("tools/call", {
+          name: "ghl-custom-field-v2-reader",
+          arguments: {
+            selectSchema: {
+              operation: "get-by-object-key",
+              params: { objectKey: "contact" },
+            },
+          },
+        }),
+      );
+      const msg = err.message;
+      const ok =
+        /contact/i.test(msg) &&
+        /ghl-location-reader\.list-custom-fields/.test(msg);
+      record(
+        "custom-field-v2 objectKey=contact pre-blocked with v1-endpoint redirect",
+        ok,
+        `error: ${msg.slice(0, 240)}`,
       );
     }
 

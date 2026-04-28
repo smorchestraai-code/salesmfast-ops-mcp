@@ -34,6 +34,35 @@ export interface CategoryRouterConfig {
     upstreamName: string,
     params: Record<string, unknown>,
   ) => Promise<unknown>;
+  /**
+   * Auto-injected params merged into `params` AFTER ajv validation, ONLY for
+   * keys the user did not supply. Eliminates the "must pass locationId on
+   * every call" friction (v1.1.1). Lazy thunks → reads env at call time.
+   *
+   * Example for location router:
+   *   contextDefaults: { locationId: () => env.locationId }
+   * Example for payments router:
+   *   contextDefaults: {
+   *     altId: () => env.locationId,
+   *     altType: () => "location",
+   *   }
+   */
+  readonly contextDefaults?: Readonly<Record<string, () => string>>;
+  /**
+   * Operations that always 403 with a location-scoped PIT (agency-only).
+   * Pre-rejected at the router with a clear message before dispatch.
+   * v1.1.1 fix.
+   */
+  readonly agencyOnlyOps?: readonly string[];
+  /**
+   * Optional per-op pre-validation hook. Throws an `McpError` to short-circuit
+   * with a helpful message before the upstream API rejects with a cryptic 4xx.
+   * Returns void on pass. Receives the merged params (after contextDefaults).
+   */
+  readonly preValidate?: (
+    operation: string,
+    params: Record<string, unknown>,
+  ) => void;
 }
 
 interface SelectInput {
@@ -80,10 +109,42 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
       }
 
       // 3. Resolve op spec (operation guaranteed valid post-validation)
-      const params = select?.params ?? {};
+      const userParams = select?.params ?? {};
       const opSpec = operation ? ops[operation] : undefined;
       if (!opSpec) {
         throw methodNotFound(operation ?? "(missing)", validOps);
+      }
+
+      // 3a. Pre-block agency-only ops (v1.1.1) — fail fast with clear message
+      // instead of letting upstream return a cryptic 403.
+      if (config.agencyOnlyOps?.includes(operation as string)) {
+        throw invalidParams(
+          `Operation "${operation}" requires an agency OAuth token; PITs (Private Integration Tokens) are location-scoped and cannot call agency-level endpoints. ` +
+            `For location-scoped equivalents see CLIENT-GUIDE.md → "Agency-only operations". ` +
+            `Configure the location once via GHL_LOCATION_ID in .env and use the location-scoped read ops instead.`,
+        );
+      }
+
+      // 3b. Auto-inject context defaults from env (v1.1.1) — fills in
+      // locationId / altId / altType when caller omitted them. User-supplied
+      // values always win.
+      const params: Record<string, unknown> = { ...userParams };
+      if (config.contextDefaults) {
+        for (const [key, getter] of Object.entries(config.contextDefaults)) {
+          if (params[key] === undefined || params[key] === "") {
+            try {
+              params[key] = getter();
+            } catch {
+              /* env not available; let upstream surface a clean error */
+            }
+          }
+        }
+      }
+
+      // 3c. Per-op pre-validation hook (v1.1.1) — short-circuit common
+      // upstream-cryptic errors with operator-friendly guidance.
+      if (config.preValidate) {
+        config.preValidate(operation as string, params);
       }
 
       // 4. Dispatch + error mapping (AC-2.3, AC-8.2)

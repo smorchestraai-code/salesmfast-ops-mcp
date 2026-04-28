@@ -10,6 +10,7 @@ import { operations } from "../operations.js";
 import { createCategoryRouter } from "./factory.js";
 import type { Upstream } from "../upstream.js";
 import type { RouterDef } from "./types.js";
+import type { ParsedEnv } from "../env.js";
 
 const LOCATION_READER_DESCRIPTION =
   "Read-only access to GoHighLevel location-level data: locations, tags, tasks, custom fields and values, templates, timezones. " +
@@ -29,6 +30,7 @@ const LOCATION_UPDATER_DESCRIPTION =
 export function createLocationReader(
   upstream: Upstream,
   deniedOps: readonly string[],
+  env: ParsedEnv,
 ): RouterDef {
   return createCategoryRouter({
     name: "ghl-location-reader",
@@ -37,12 +39,18 @@ export function createLocationReader(
     ops: operations.location.reader,
     deniedOps,
     dispatch: (op, params) => upstream.locationTools.executeTool(op, params),
+    // v1.1.1: auto-inject locationId from env when caller omits it.
+    contextDefaults: { locationId: () => env.locationId },
+    // v1.1.1: location.search hits /locations/search which is agency-only.
+    // PITs are location-scoped — pre-block with clear error rather than 403.
+    agencyOnlyOps: ["search"],
   });
 }
 
 export function createLocationUpdater(
   upstream: Upstream,
   deniedOps: readonly string[],
+  env: ParsedEnv,
 ): RouterDef {
   return createCategoryRouter({
     name: "ghl-location-updater",
@@ -51,5 +59,6 @@ export function createLocationUpdater(
     ops: operations.location.updater,
     deniedOps,
     dispatch: (op, params) => upstream.locationTools.executeTool(op, params),
+    contextDefaults: { locationId: () => env.locationId },
   });
 }

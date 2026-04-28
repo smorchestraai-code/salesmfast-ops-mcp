@@ -12,6 +12,7 @@ import { operations } from "../operations.js";
 import { createCategoryRouter } from "./factory.js";
 import type { Upstream } from "../upstream.js";
 import type { RouterDef } from "./types.js";
+import type { ParsedEnv } from "../env.js";
 
 const STORE_READER_DESCRIPTION =
   "Read-only access to GoHighLevel store / shipping config: zones, rates, carriers, available-rates, store settings. " +
@@ -30,6 +31,7 @@ const STORE_UPDATER_DESCRIPTION =
 export function createStoreReader(
   upstream: Upstream,
   deniedOps: readonly string[],
+  env: ParsedEnv,
 ): RouterDef {
   return createCategoryRouter({
     name: "ghl-store-reader",
@@ -39,12 +41,18 @@ export function createStoreReader(
     deniedOps,
     // Quirk: StoreTools method is executeStoreTool, not executeTool.
     dispatch: (op, params) => upstream.storeTools.executeStoreTool(op, params),
+    // v1.1.1: store uses GHL's altId+altType pattern (same as payments).
+    contextDefaults: {
+      altId: () => env.locationId,
+      altType: () => "location",
+    },
   });
 }
 
 export function createStoreUpdater(
   upstream: Upstream,
   deniedOps: readonly string[],
+  env: ParsedEnv,
 ): RouterDef {
   return createCategoryRouter({
     name: "ghl-store-updater",
@@ -53,5 +61,9 @@ export function createStoreUpdater(
     ops: operations.store.updater,
     deniedOps,
     dispatch: (op, params) => upstream.storeTools.executeStoreTool(op, params),
+    contextDefaults: {
+      altId: () => env.locationId,
+      altType: () => "location",
+    },
   });
 }

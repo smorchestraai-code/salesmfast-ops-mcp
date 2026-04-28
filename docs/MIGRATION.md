@@ -414,33 +414,56 @@ npm run probe:write   # 4/4 round-trip on a real contact (create → get → del
 
 ---
 
-## Param-passing quirk — locationId / altId
+## Param-passing quirk — locationId / altId  (✅ resolved in v1.1.1)
 
-A small UX wart inherited from the upstream's tool wrappers:
+The upstream's tool wrappers extract `params.locationId` (location ops) and `params.altId` + `params.altType` (payments / store ops) explicitly, rather than reading them from the GHLApiClient config.
 
-- **Location ops** (`ghl-location-reader.list-tags`, `list-custom-fields`, `list-templates`, etc.): upstream extracts `params.locationId` and bakes it into the URL. The GHLApiClient does NOT auto-inject from its config. **Operators must pass `locationId` explicitly** in `selectSchema.params`:
+**v1.1.1 fix — auto-inject:** the facade's `createCategoryRouter` accepts a `contextDefaults` map. The location, payments, products, and store routers wire `locationId` / `altId` / `altType` to the configured `GHL_LOCATION_ID`. They merge into params **after** ajv validation and **only** for keys the caller did not supply. Caller overrides always win.
 
-  ```js
-  ghl-location-reader({
-    selectSchema: {
-      operation: "list-tags",
-      params: { locationId: "<your-location-id>" }
-    }
-  })
-  ```
+**You no longer need to pass these params on every call.**
 
-- **Payments ops** (`ghl-payments-reader.list-orders`, `list-transactions`, etc.): upstream passes args verbatim as query params. Operators must pass `altId` + `altType: "location"`:
+```js
+// v1.1.0 and earlier — required explicit params
+ghl-location-reader({
+  selectSchema: { operation: "list-tags", params: { locationId: "<id>" } }
+})
 
-  ```js
-  ghl-payments-reader({
-    selectSchema: {
-      operation: "list-orders",
-      params: { altId: "<your-location-id>", altType: "location", limit: 20 }
-    }
-  })
-  ```
+// v1.1.1+ — locationId auto-injected
+ghl-location-reader({
+  selectSchema: { operation: "list-tags" }
+})
+```
 
-The affected ops have `additionalProperties: true` in the manifest so these params pass through without schema rejection. Phase 2.5 cleanup candidate: factory-level `paramInjections` to auto-merge `locationId` for location ops.
+Same for payments:
+
+```js
+// v1.1.0 and earlier
+ghl-payments-reader({
+  selectSchema: {
+    operation: "list-orders",
+    params: { altId: "<id>", altType: "location", limit: 20 },
+  },
+})
+
+// v1.1.1+ — altId + altType auto-injected
+ghl-payments-reader({
+  selectSchema: { operation: "list-orders", params: { limit: 20 } },
+})
+```
+
+### Agency-only ops — pre-blocked under PIT auth (new in v1.1.1)
+
+Operations that hit GHL agency-level endpoints (e.g., `/locations/search`) always 403 with a PIT (PITs are location-scoped). v1.1.1 pre-blocks these at the router with an actionable `InvalidParams` message instead of letting the upstream return a cryptic 403.
+
+Currently pre-blocked: `ghl-location-reader.search`. Use `ghl-location-reader.get` (now auto-injects `locationId`) or any other location-reader op for the configured location.
+
+### Custom-field-v2 contact/opportunity pre-block (new in v1.1.1)
+
+The custom-field-v2 API rejects `objectKey: "contact"` and `objectKey: "opportunity"` with a cryptic 400 ("Api does not support objectKey of type contact or opportunity"). v1.1.1 pre-blocks these at the router with a redirect:
+
+- For contact custom fields → use `ghl-location-reader.list-custom-fields` (v1 endpoint)
+- For opportunity custom fields → use `ghl-opportunities-reader.search` (read `customFields[]` on each opportunity)
+- For USER_DEFINED custom objects (e.g., `webinars`) → use `custom_objects.<key>` (list valid keys via `ghl-object-reader.list`)
 
 ---
 
