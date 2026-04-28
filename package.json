@@ -1,7 +1,7 @@
 {
   "name": "salesmfast-ops-mcp",
-  "version": "0.1.0",
-  "description": "Facade-router MCP server: GoHighLevel 280-tool surface exposed as 13 category-level routers.",
+  "version": "1.1.2",
+  "description": "Facade-router MCP server: GoHighLevel 280-tool upstream surface exposed as 35 category-level routers across 18 categories.",
   "type": "module",
   "main": "dist/server.js",
   "bin": {

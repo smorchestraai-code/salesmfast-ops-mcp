@@ -115,9 +115,15 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
         throw methodNotFound(operation ?? "(missing)", validOps);
       }
 
+      // Operation is guaranteed string after step 1's manifest lookup, but
+      // narrow explicitly to remove the cast (and to satisfy strict TS).
+      if (typeof operation !== "string") {
+        throw methodNotFound("(missing)", validOps);
+      }
+
       // 3a. Pre-block agency-only ops (v1.1.1) — fail fast with clear message
       // instead of letting upstream return a cryptic 403.
-      if (config.agencyOnlyOps?.includes(operation as string)) {
+      if (config.agencyOnlyOps?.includes(operation)) {
         throw invalidParams(
           `Operation "${operation}" requires an agency OAuth token; PITs (Private Integration Tokens) are location-scoped and cannot call agency-level endpoints. ` +
             `For location-scoped equivalents see CLIENT-GUIDE.md → "Agency-only operations". ` +
@@ -128,15 +134,19 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
       // 3b. Auto-inject context defaults from env (v1.1.1) — fills in
       // locationId / altId / altType when caller omitted them. User-supplied
       // values always win.
+      //
+      // Contract: contextDefaults values are string-only (locationId, altId,
+      // altType). The "needs injection" check covers undefined / null / empty
+      // string — anything else (including any non-empty caller value) is
+      // treated as user-supplied and not overwritten. Errors from the getter
+      // propagate intentionally — an invariant violation in env should not
+      // be silently swallowed (env is validated at parseEnv).
       const params: Record<string, unknown> = { ...userParams };
       if (config.contextDefaults) {
         for (const [key, getter] of Object.entries(config.contextDefaults)) {
-          if (params[key] === undefined || params[key] === "") {
-            try {
-              params[key] = getter();
-            } catch {
-              /* env not available; let upstream surface a clean error */
-            }
+          const v = params[key];
+          if (v === undefined || v === null || v === "") {
+            params[key] = getter();
           }
         }
       }
@@ -144,7 +154,7 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
       // 3c. Per-op pre-validation hook (v1.1.1) — short-circuit common
       // upstream-cryptic errors with operator-friendly guidance.
       if (config.preValidate) {
-        config.preValidate(operation as string, params);
+        config.preValidate(operation, params);
       }
 
       // 4. Dispatch + error mapping (AC-2.3, AC-8.2)

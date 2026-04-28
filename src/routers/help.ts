@@ -32,7 +32,9 @@ const HELP_DESCRIPTION =
   "`describe-operation { router, operation }` (returns full input schema and a worked example for one operation). " +
   "Active categories register their routers under `ghl-{category}-reader` (read-only, idempotent, safe to auto-approve) " +
   "and `ghl-{category}-updater` (write, mutating, gate behind explicit confirmation). " +
-  "Currently shipping: `ghl-calendars-reader` (6 read operations against GoHighLevel calendars). " +
+  "Currently shipping ~35 facade tools across 18 categories — full upstream coverage: contacts, conversations, calendars, opportunities, location, workflow, email, social-media, survey, invoice, products, payments, store, blog, media, custom-field-v2, object, association. " +
+  'Auto-inject (v1.1.1+): `locationId` is auto-injected from `GHL_LOCATION_ID` for location/products routers; `altId`+`altType: "location"` for payments/store. Caller-supplied values override. ' +
+  "Pre-blocks (v1.1.1+): `ghl-location-reader.search` is agency-only and rejected under PIT auth; `ghl-custom-field-v2-reader.get-by-object-key` rejects SYSTEM_DEFINED keys (`contact`, `opportunity`, `business`) — use `ghl-location-reader.list-custom-fields` for contacts or `ghl-opportunities-reader.search` for opportunity custom fields. " +
   "The set of registered routers is controlled by the `GHL_TOOL_CATEGORIES` and `GHL_TOOL_DENY` env vars at boot — " +
   "call `list-categories` to see the active set in the running server.";
 
@@ -157,9 +159,7 @@ function wrap(payload: unknown): {
   return { content: [{ type: "text", text: JSON.stringify(payload) }] };
 }
 
-function serializeOps(
-  ops: OperationsMap,
-): Array<{
+function serializeOps(ops: OperationsMap): Array<{
   name: string;
   description: string;
   upstream: string;

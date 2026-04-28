@@ -1,30 +1,44 @@
 # salesmfast-ops-mcp
 
-Facade-router MCP server. Wraps the upstream 280-tool [GoHighLevel-MCP](../GoHighLevel-MCP) as 13 category-level routers, sized to fit under host tool caps (~128 tools per session).
+Facade-router MCP server. Wraps the upstream 280-tool [GoHighLevel-MCP](../GoHighLevel-MCP) as **35 category-level routers across 18 categories**, sized to fit under host tool caps (~128 tools per session).
 
-**Phase 1 status:** ✅ all 10 BRD stories closed (see [`STATUS.md`](./STATUS.md)). Ships **12 routers + `ghl-toolkit-help` = 13 facade tools** for **80 operations**. Cap thesis proven: with `GHL_TOOL_CATEGORIES=all`, exactly 13 tools register on the host instead of upstream's ~280.
+**Status (v1.1.2 — 2026-04-28):** ✅ Phase 1 + Phase 2 closed (full upstream coverage); UX hardening (auto-inject + agency-block + custom-field-v2 redirect) shipped. **34 routers + `ghl-toolkit-help` = 35 facade tools** covering ~259 operations. Cap thesis proven and validated against two operator machines (Mamoun, Lana).
 
-**Migrating from upstream `ghl-mcp`?** Read [`docs/MIGRATION.md`](./docs/MIGRATION.md) — three-step host swap + the full old-name → new-router/operation mapping table.
+> **Quick install for clients:** see [`CLIENT-GUIDE.md`](./CLIENT-GUIDE.md) — single-doc walkthrough + automated `install.sh` (clones upstream, builds, wires Claude Desktop config, verifies via probe).
 
-See [`BRD.md`](./BRD.md) for the full requirements and [`CLAUDE.md`](./CLAUDE.md) for the agent on-ramp.
+**Migrating from upstream `ghl-mcp`?** Read [`docs/MIGRATION.md`](./docs/MIGRATION.md) — three-step host swap + the full old-name → new-router/operation mapping table + v1.1.1+ auto-inject behaviour.
+
+See [`BRD.md`](./BRD.md) for the original requirements and [`CLAUDE.md`](./CLAUDE.md) for the agent on-ramp + architecture decisions log.
 
 ---
 
 ## Install
 
+**For clients / non-developer operators**, use the one-shot installer:
+```bash
+git clone https://github.com/smorchestraai-code/salesmfast-ops-mcp.git
+cd salesmfast-ops-mcp
+bash install.sh                                  # pins to v1.1.2 by default
+# → clones upstream, builds, prompts for PIT + locationId, writes .env, runs probe, merges Claude Desktop config
+```
+Override the version with `SALESMFAST_OPS_VERSION=main bash install.sh` for HEAD.
+
+**For developers** (manual flow):
 ```bash
 git clone <repo> salesmfast-ops-mcp
 cd salesmfast-ops-mcp
+git checkout v1.1.2-bridge-gaps                  # or `main` for HEAD
 npm install
 cp .env.example .env
-# edit .env and fill in real values from BRD section 10.2
+# edit .env and fill in GHL_API_KEY + GHL_LOCATION_ID
 npm run build
-npm run probe
+npm run probe                                    # 25 read-path assertions
+npm run probe:write                              # 4 write-path round-trip assertions (mutates upstream)
 ```
 
-`npm run probe` should exit 0 with all 6 assertions green, including a live API round-trip that returns `FKQpu4dGBFauC28DQfSP` from the GHL calendar groups endpoint.
+`npm run probe` exits 0 with **25 assertions green**, including live-API round-trips across all 18 categories (calendars, contacts, conversations, opportunities, location, workflow, email, social, survey, invoice, products, payments, store, blog, media, custom-field-v2, object, association) plus negative tests for the v1.1.1 agency-block + custom-field-v2 redirect.
 
-The upstream is pinned via `file:/Users/mamounalamouri/GoHighLevel-MCP` (single-developer-machine assumption — see CLAUDE.md "Architecture decisions" log). If you edit the upstream, run `npm run build` there first, then re-run `npm install` here.
+The upstream is pinned via `file:` link to `../GoHighLevel-MCP`. `install.sh` clones and builds it automatically. If you edit the upstream, run `npm run build` there first, then re-run `npm install` here.
 
 ---
 
@@ -35,7 +49,7 @@ The upstream is pinned via `file:/Users/mamounalamouri/GoHighLevel-MCP` (single-
 | `GHL_API_KEY` | yes | — | GoHighLevel Personal Integration Token (PIT). Dev value in BRD section 10.2. |
 | `GHL_LOCATION_ID` | yes | — | GHL location id (e.g., `UNw9DraGO3eyEa5l4lkJ`). |
 | `GHL_BASE_URL` | no | `https://services.leadconnectorhq.com` | GHL REST root. |
-| `GHL_TOOL_CATEGORIES` | no | `all` | Comma-list of categories to register (`calendars`, `contacts`, ...). `all` registers every Phase 1 reader. |
+| `GHL_TOOL_CATEGORIES` | no | `all` | Comma-list of categories to register (`calendars`, `contacts`, ...). `all` registers all 18 categories. See [`CLIENT-GUIDE.md`](./CLIENT-GUIDE.md) for the full list. |
 | `GHL_TOOL_DENY` | no | `` | Comma-list of operation names to strip from the manifest. |
 
 PIT keys go in `.env` only. `.env` is gitignored. The `secret-scanner-v2` pre-commit hook blocks any committed file containing a `<KEY-NAME>=...` pattern, regardless of whether the value looks real.
@@ -62,7 +76,7 @@ Append to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-Comment out the existing `ghl-mcp` block so the host loads only this server. Restart Claude Desktop. Verify ~13 tools appear in connector permissions UI (2 in this Phase 1 slice).
+Comment out the existing `ghl-mcp` block so the host loads only this server. Restart Claude Desktop. Verify **35 tools** appear in connector permissions UI (1 help tool + 34 facade routers across 18 categories).
 
 **Rollback:** revert that one block in `claude_desktop_config.json` and restart Claude Desktop. Drill is `optional` in `.smorch/project.json` — CEO-approved per `/smo-plan` workflow.
 
@@ -73,7 +87,7 @@ Comment out the existing `ghl-mcp` block so the host loads only this server. Res
 | Command | Effect |
 |---------|--------|
 | `npm run build` | Runs `prebuild` (regenerates `docs/operation-mapping.md`) then `tsc`. Emits `dist/`. |
-| `npm run probe` | 10-assertion stdio JSON-RPC integration test (live GHL API, read-only). Exit 0 = green. |
+| `npm run probe` | 25-assertion stdio JSON-RPC integration test (live GHL API, read-only) covering all 18 categories + auto-inject regression + agency-block + v2-redirect negative tests. Exit 0 = green. |
 | `npm run probe:write` | **Opt-in** AC-6.4 round-trip: creates a real GHL contact → gets it back → deletes it. NOT in CI default — mutates upstream state. |
 | `npm run docs:mapping` | Regenerates the operation mapping doc on its own. |
 | `npm run lint` | `tsc -p tsconfig.scripts.json` — type-checks `src/` + `scripts/` (no emit). |
