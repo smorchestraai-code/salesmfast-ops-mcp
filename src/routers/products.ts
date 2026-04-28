@@ -11,6 +11,7 @@ import { operations } from "../operations.js";
 import { createCategoryRouter } from "./factory.js";
 import type { Upstream } from "../upstream.js";
 import type { RouterDef } from "./types.js";
+import type { ParsedEnv } from "../env.js";
 
 const PRODUCTS_READER_DESCRIPTION =
   "Read-only access to GoHighLevel products, prices, collections, and inventory. " +
@@ -29,6 +30,7 @@ const PRODUCTS_UPDATER_DESCRIPTION =
 export function createProductsReader(
   upstream: Upstream,
   deniedOps: readonly string[],
+  env: ParsedEnv,
 ): RouterDef {
   return createCategoryRouter({
     name: "ghl-products-reader",
@@ -39,12 +41,16 @@ export function createProductsReader(
     // Quirk: ProductsTools method is executeProductsTool, not executeTool.
     dispatch: (op, params) =>
       upstream.productsTools.executeProductsTool(op, params),
+    // v1.1.1: products uses locationId on every op (some ops also accept
+    // altId/altType for cross-context queries; user can override).
+    contextDefaults: { locationId: () => env.locationId },
   });
 }
 
 export function createProductsUpdater(
   upstream: Upstream,
   deniedOps: readonly string[],
+  env: ParsedEnv,
 ): RouterDef {
   return createCategoryRouter({
     name: "ghl-products-updater",
@@ -54,5 +60,6 @@ export function createProductsUpdater(
     deniedOps,
     dispatch: (op, params) =>
       upstream.productsTools.executeProductsTool(op, params),
+    contextDefaults: { locationId: () => env.locationId },
   });
 }

@@ -13,6 +13,7 @@ import { operations } from "../operations.js";
 import { createCategoryRouter } from "./factory.js";
 import type { Upstream } from "../upstream.js";
 import type { RouterDef } from "./types.js";
+import type { ParsedEnv } from "../env.js";
 
 const PAYMENTS_READER_DESCRIPTION =
   "Read-only access to GoHighLevel payments: orders, subscriptions, transactions, coupons, fulfillments, custom-provider configs, whitelabel integrations. " +
@@ -31,6 +32,7 @@ const PAYMENTS_UPDATER_DESCRIPTION =
 export function createPaymentsReader(
   upstream: Upstream,
   deniedOps: readonly string[],
+  env: ParsedEnv,
 ): RouterDef {
   return createCategoryRouter({
     name: "ghl-payments-reader",
@@ -40,12 +42,19 @@ export function createPaymentsReader(
     deniedOps,
     // Quirk: PaymentsTools method is handleToolCall, not executeTool.
     dispatch: (op, params) => upstream.paymentsTools.handleToolCall(op, params),
+    // v1.1.1: payments uses GHL's altId+altType pattern. PITs are
+    // location-scoped → altId=locationId, altType="location".
+    contextDefaults: {
+      altId: () => env.locationId,
+      altType: () => "location",
+    },
   });
 }
 
 export function createPaymentsUpdater(
   upstream: Upstream,
   deniedOps: readonly string[],
+  env: ParsedEnv,
 ): RouterDef {
   return createCategoryRouter({
     name: "ghl-payments-updater",
@@ -54,5 +63,9 @@ export function createPaymentsUpdater(
     ops: operations.payments.updater,
     deniedOps,
     dispatch: (op, params) => upstream.paymentsTools.handleToolCall(op, params),
+    contextDefaults: {
+      altId: () => env.locationId,
+      altType: () => "location",
+    },
   });
 }

@@ -120,10 +120,10 @@ export function buildRouters(
 
   if (activeCategories.includes("location")) {
     if (Object.keys(operations.location.reader).length > 0) {
-      routers.push(createLocationReader(upstream, env.deniedOps));
+      routers.push(createLocationReader(upstream, env.deniedOps, env));
     }
     if (Object.keys(operations.location.updater).length > 0) {
-      routers.push(createLocationUpdater(upstream, env.deniedOps));
+      routers.push(createLocationUpdater(upstream, env.deniedOps, env));
     }
   }
 
@@ -172,28 +172,28 @@ export function buildRouters(
   // ─── Slice 8 (Revenue) ────
   if (activeCategories.includes("products")) {
     if (Object.keys(operations.products.reader).length > 0) {
-      routers.push(createProductsReader(upstream, env.deniedOps));
+      routers.push(createProductsReader(upstream, env.deniedOps, env));
     }
     if (Object.keys(operations.products.updater).length > 0) {
-      routers.push(createProductsUpdater(upstream, env.deniedOps));
+      routers.push(createProductsUpdater(upstream, env.deniedOps, env));
     }
   }
 
   if (activeCategories.includes("payments")) {
     if (Object.keys(operations.payments.reader).length > 0) {
-      routers.push(createPaymentsReader(upstream, env.deniedOps));
+      routers.push(createPaymentsReader(upstream, env.deniedOps, env));
     }
     if (Object.keys(operations.payments.updater).length > 0) {
-      routers.push(createPaymentsUpdater(upstream, env.deniedOps));
+      routers.push(createPaymentsUpdater(upstream, env.deniedOps, env));
     }
   }
 
   if (activeCategories.includes("store")) {
     if (Object.keys(operations.store.reader).length > 0) {
-      routers.push(createStoreReader(upstream, env.deniedOps));
+      routers.push(createStoreReader(upstream, env.deniedOps, env));
     }
     if (Object.keys(operations.store.updater).length > 0) {
-      routers.push(createStoreUpdater(upstream, env.deniedOps));
+      routers.push(createStoreUpdater(upstream, env.deniedOps, env));
     }
   }
 
