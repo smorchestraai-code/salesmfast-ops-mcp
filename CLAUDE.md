@@ -87,12 +87,20 @@ Add entries here as you make irreversible choices. Format: `date — decision �
 - _2026-04-26 — `qa.rollback_drill: "optional"` in `.smorch/project.json` — CEO-approved (Mamoun). Justification: stdio MCP installed via `claude_desktop_config.json`, no PM2/SSH deploy, rollback = revert one config block. Drill is structurally N/A._
 - _2026-04-28 — v1.1.1 UX hardening — factory-level `contextDefaults` (auto-inject `locationId` / `altId` / `altType` from env when caller omits them), `agencyOnlyOps` (pre-block `ghl-location-reader.search` with actionable error instead of letting upstream return cryptic 403), `preValidate` hook (custom-field-v2 `objectKey: "contact"` / `"opportunity"` → redirect to v1 endpoint at `ghl-location-reader.list-custom-fields`). Triggered by Lana's first-pass QA: 4 of 10 calls hit documented "operator quirks"; CEO push-back: those are server-side UX gaps. Auto-inject merges AFTER ajv validation so user-supplied values always win — transparent for callers that pass params explicitly, frictionless for callers that don't. Probe gained 2 new positive assertions (live reads with no params verify auto-inject) + 2 new negative assertions (agency block + custom-field redirect). 25 read + 4 write = 29 GREEN. Tool count unchanged at 35; behavior purely additive over v1.1.0._
 
-## Hand-back to Cowork
+## Status (current — 2026-04-28)
 
-When `npm run probe` is green and Definition of Done is met, the next agent (Cowork) takes over for integration smoke test:
-1. Update `~/Library/Application Support/Claude/claude_desktop_config.json` to swap `ghl-mcp` for `salesmfast-ops`.
-2. Restart Claude Desktop.
-3. Call `ghl-calendars-reader { operation: "list-groups" }` from a Cowork session.
-4. Confirm: 13 tools visible in Cowork's connector permissions UI; calendar group `FKQpu4dGBFauC28DQfSP` returned in the response; no "disabled in connector settings" errors.
+**Phase 1 + Phase 2 + UX hardening shipped.** 35 facade tools across 18 categories, full upstream coverage. v1.1.2 is the current stable release. Validated end-to-end on two operator machines (Mamoun, Lana via SMO-236).
 
-Then: deprecate the upstream `ghl-mcp` from config and update `smorch-gtm-tools:ghl-operator` SKILL.md to use the new router shape. That's Phase 2.
+**Tag:** `v1.1.2-bridge-gaps` (PRs #1 through #12).
+**Probe state:** 25 read-path + 4 write-path = 29/29 GREEN.
+**Client install path:** `bash install.sh` (auto-pins to v1.1.2; override via `SALESMFAST_OPS_VERSION`).
+
+## Historical hand-back to Cowork (Phase 1 — now closed)
+
+Original Phase 1 hand-back checklist (preserved for audit):
+1. Update `~/Library/Application Support/Claude/claude_desktop_config.json` to swap `ghl-mcp` for `salesmfast-ops`. ✅ done
+2. Restart Claude Desktop. ✅ done
+3. Call `ghl-calendars-reader { operation: "list-groups" }` from a Cowork session. ✅ verified
+4. Confirm: 35 tools visible in connector permissions UI; calendar group `FKQpu4dGBFauC28DQfSP` returned. ✅ verified
+
+Phase 2 closed full upstream coverage. SKILL.md updates for `smorch-gtm-tools:ghl-operator` were applied during slice 11 cleanup; reference doc migration banners point to current router shape.

@@ -479,6 +479,24 @@ async function main(): Promise<void> {
       );
     }
 
+    // v1.1.2 — Negative: location-updater agency-only ops (create/update/delete
+    // sub-account) pre-blocked under PIT auth.
+    {
+      const err = await expectThrow(
+        a.request("tools/call", {
+          name: "ghl-location-updater",
+          arguments: { selectSchema: { operation: "create" } },
+        }),
+      );
+      const msg = err.message.toLowerCase();
+      const ok = msg.includes("agency") && msg.includes("pit");
+      record(
+        "agency-only op (ghl-location-updater.create) pre-blocked",
+        ok,
+        `error: ${err.message.slice(0, 200)}`,
+      );
+    }
+
     // v1.1.1 — Negative: custom-field-v2 with objectKey="contact" pre-blocks
     // with a redirect to ghl-location-reader.list-custom-fields.
     {
@@ -501,6 +519,106 @@ async function main(): Promise<void> {
         "custom-field-v2 objectKey=contact pre-blocked with v1-endpoint redirect",
         ok,
         `error: ${msg.slice(0, 240)}`,
+      );
+    }
+
+    // v1.1.2 — Negative: custom-field-v2 with objectKey="opportunity" also
+    // pre-blocks with a redirect to ghl-opportunities-reader.search.
+    {
+      const err = await expectThrow(
+        a.request("tools/call", {
+          name: "ghl-custom-field-v2-reader",
+          arguments: {
+            selectSchema: {
+              operation: "get-by-object-key",
+              params: { objectKey: "opportunity" },
+            },
+          },
+        }),
+      );
+      const msg = err.message;
+      const ok =
+        /opportunity/i.test(msg) &&
+        /ghl-opportunities-reader\.search/.test(msg);
+      record(
+        "custom-field-v2 objectKey=opportunity pre-blocked with opportunities-reader redirect",
+        ok,
+        `error: ${msg.slice(0, 240)}`,
+      );
+    }
+
+    // v1.1.2 — Negative: custom-field-v2 with objectKey="business" (Company
+    // schema's SYSTEM_DEFINED key) also pre-blocks. v1.1.1 only caught
+    // contact/opportunity; v1.1.2 widens the block to all non-custom_objects.* keys.
+    {
+      const err = await expectThrow(
+        a.request("tools/call", {
+          name: "ghl-custom-field-v2-reader",
+          arguments: {
+            selectSchema: {
+              operation: "get-by-object-key",
+              params: { objectKey: "business" },
+            },
+          },
+        }),
+      );
+      const msg = err.message;
+      const ok = /business/i.test(msg) && /custom_objects/i.test(msg);
+      record(
+        "custom-field-v2 objectKey=business pre-blocked (Company SYSTEM_DEFINED key)",
+        ok,
+        `error: ${msg.slice(0, 240)}`,
+      );
+    }
+
+    // v1.1.2 — Positive: user-supplied locationId beats auto-inject.
+    // Strategy: pass a syntactically-valid but non-accessible-to-this-PIT
+    // location id. If auto-inject correctly NOT-overwrites the user value,
+    // the upstream returns a token-scope/access error (because the bogus
+    // id is not accessible). If auto-inject incorrectly overwrites, the
+    // call would succeed and return the env-configured location's tags.
+    //
+    // Success markers (any one): bogus id echoed back, OR an upstream
+    // access/auth failure mentioning the location, OR absence of the
+    // env-location's well-known tag id `os2scn2e9L8PAaNhxy1l`.
+    {
+      const bogus = "BOGUS123notreallocation";
+      const envWellKnownTag = "os2scn2e9L8PAaNhxy1l";
+      let resolvedText: string | undefined;
+      let errorMsg: string | undefined;
+      try {
+        const result = (await a.request("tools/call", {
+          name: "ghl-location-reader",
+          arguments: {
+            selectSchema: {
+              operation: "list-tags",
+              params: { locationId: bogus },
+            },
+          },
+        })) as { content: { type: string; text: string }[] };
+        resolvedText = result.content?.[0]?.text ?? "";
+      } catch (e) {
+        errorMsg = (e as Error).message ?? "";
+      }
+      const haystack = (resolvedText ?? "") + " " + (errorMsg ?? "");
+      // The override won iff: we did NOT receive env-location's well-known
+      // tag (which auto-inject would have produced) AND we received either
+      // the bogus id echoed back or an upstream access/auth failure.
+      const overwritten = haystack.includes(envWellKnownTag);
+      const upstreamRejected =
+        haystack.includes(bogus) ||
+        /does not have access|not authorized|invalid.*location|unauthorized/i.test(
+          haystack,
+        );
+      const ok = !overwritten && upstreamRejected;
+      record(
+        "override-wins: user-supplied locationId reaches upstream (auto-inject does not overwrite)",
+        ok,
+        ok
+          ? "upstream rejected bogus override (proves user value reached upstream, not env-overwritten)"
+          : overwritten
+            ? "FAIL: env-location tag returned — auto-inject silently overwrote user value"
+            : `inconclusive; haystack first 240: ${haystack.slice(0, 240)}`,
       );
     }
 

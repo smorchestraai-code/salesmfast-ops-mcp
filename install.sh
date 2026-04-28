@@ -31,6 +31,11 @@ PARENT_DIR="$(dirname "$FACADE_DIR")"
 UPSTREAM_DIR="${UPSTREAM_DIR:-$PARENT_DIR/GoHighLevel-MCP}"
 UPSTREAM_REPO="${UPSTREAM_REPO:-https://github.com/mastanley13/GoHighLevel-MCP.git}"
 
+# Pin the facade to a specific tag for reproducible installs. Override with
+# SALESMFAST_OPS_VERSION=v1.1.x or set to "main" for HEAD. v1.1.2 = current
+# stable as of 2026-04-28 (auto-inject + agency-block + UX hardening).
+SALESMFAST_OPS_VERSION="${SALESMFAST_OPS_VERSION:-v1.1.2-bridge-gaps}"
+
 # ─── Output helpers ─────────────────────────────────────────────────────────
 GREEN="\033[0;32m"; RED="\033[0;31m"; YEL="\033[0;33m"; BLU="\033[0;34m"; NC="\033[0m"
 log()  { printf "${BLU}▶${NC}  %s\n" "$*"; }
@@ -59,6 +64,25 @@ if ! command -v jq >/dev/null; then
   HAS_JQ=0
 else
   HAS_JQ=1
+fi
+
+# Pin facade repo to the requested version (idempotent — only switches if needed).
+if [[ -d "$FACADE_DIR/.git" ]]; then
+  CURRENT_REF="$(cd "$FACADE_DIR" && git describe --tags --always 2>/dev/null || echo "unknown")"
+  if [[ "$SALESMFAST_OPS_VERSION" != "main" && "$CURRENT_REF" != "$SALESMFAST_OPS_VERSION"* ]]; then
+    log "Pinning facade to $SALESMFAST_OPS_VERSION (current: $CURRENT_REF)"
+    (cd "$FACADE_DIR" && git fetch --tags --quiet 2>/dev/null || true)
+    if (cd "$FACADE_DIR" && git rev-parse --verify --quiet "$SALESMFAST_OPS_VERSION" >/dev/null); then
+      (cd "$FACADE_DIR" && git checkout --quiet "$SALESMFAST_OPS_VERSION") \
+        || warn "checkout $SALESMFAST_OPS_VERSION failed — continuing on $CURRENT_REF"
+    else
+      warn "tag $SALESMFAST_OPS_VERSION not found locally; continuing on $CURRENT_REF (set SALESMFAST_OPS_VERSION=main to skip pinning)"
+    fi
+  else
+    ok "Facade already on $CURRENT_REF (matches $SALESMFAST_OPS_VERSION)"
+  fi
+else
+  warn "Facade dir is not a git repo — skipping version pin"
 fi
 
 # ─── Step 2: clone or update upstream ───────────────────────────────────────

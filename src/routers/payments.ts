@@ -18,6 +18,7 @@ import type { ParsedEnv } from "../env.js";
 const PAYMENTS_READER_DESCRIPTION =
   "Read-only access to GoHighLevel payments: orders, subscriptions, transactions, coupons, fulfillments, custom-provider configs, whitelabel integrations. " +
   "Operations: `list-orders`, `get-order`, `list-fulfillments`, `list-subscriptions`, `get-subscription`, `list-transactions`, `get-transaction`, `list-coupons`, `get-coupon`, `get-custom-provider-config`, `list-whitelabel-providers`. " +
+  'v1.1.1: `altId` (= location id) and `altType: "location"` are auto-injected from `GHL_LOCATION_ID` env — omit unless overriding. ' +
   "All operations are idempotent and side-effect-free; safe to auto-approve. " +
   'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
   'params: { router: "ghl-payments-reader", operation: "<name>" } }` for the full schema.';
@@ -25,6 +26,7 @@ const PAYMENTS_READER_DESCRIPTION =
 const PAYMENTS_UPDATER_DESCRIPTION =
   "Write access to GoHighLevel payments: order fulfillments + coupon CRUD + custom payment provider config + whitelabel integration. " +
   "Operations: `create-fulfillment`, `create-coupon`, `update-coupon`, `delete-coupon`, `create-custom-provider-config`, `disconnect-custom-provider-config`, `create-custom-provider-integration`, `delete-custom-provider-integration`, `create-whitelabel-provider`. " +
+  'v1.1.1: `altId` and `altType: "location"` are auto-injected from `GHL_LOCATION_ID` env — omit unless overriding. ' +
   "All operations mutate state — gate behind explicit confirmation; do NOT auto-approve. " +
   'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
   'params: { router: "ghl-payments-updater", operation: "<name>" } }` for the full schema.';

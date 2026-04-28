@@ -1,6 +1,8 @@
 # BRD — `salesmfast-ops-mcp`
 
-A facade-router MCP server that exposes the 280-tool GoHighLevel surface as 13 category-level tools, sized to fit under host tool caps and aligned to SMOrchestra GTM workflows.
+> **Status note (2026-04-28):** This BRD is locked at v1.0 (Phase 1 requirements: ~13 facade tools, ~80 operations). **Current shipping reality is broader** — Phase 2 closed full upstream coverage at **35 facade tools / ~259 operations** (see `README.md`, `CLIENT-GUIDE.md`, and `CLAUDE.md` "Architecture decisions" log). v1.1.1 added auto-inject for `locationId` / `altId`, agency-only-op pre-blocking, and v2 custom-field redirect; v1.1.2 widened the v2 redirect to all SYSTEM_DEFINED keys and tightened doc/version metadata. The Definition of Done in §11 was achieved for Phase 1; subsequent slices are documented in CLAUDE.md decisions log, not here. The BRD is preserved for traceability, not as current-state reference.
+
+A facade-router MCP server that exposes the 280-tool GoHighLevel surface as 13 category-level tools (Phase 1; now 35 across 18 categories in current shipping), sized to fit under host tool caps and aligned to SMOrchestra GTM workflows.
 
 | Field | Value |
 |---|---|

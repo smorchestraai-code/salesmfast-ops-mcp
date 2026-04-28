@@ -17,6 +17,7 @@ import type { ParsedEnv } from "../env.js";
 const STORE_READER_DESCRIPTION =
   "Read-only access to GoHighLevel store / shipping config: zones, rates, carriers, available-rates, store settings. " +
   "Operations: `list-shipping-zones`, `get-shipping-zone`, `list-shipping-rates`, `get-shipping-rate`, `list-shipping-carriers`, `get-shipping-carrier`, `get-available-rates`, `get-store-setting`. " +
+  'v1.1.1: `altId` (= location id) and `altType: "location"` are auto-injected from `GHL_LOCATION_ID` env — omit unless overriding. ' +
   "All operations are idempotent and side-effect-free; safe to auto-approve. " +
   'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
   'params: { router: "ghl-store-reader", operation: "<name>" } }` for the full schema.';
@@ -24,6 +25,7 @@ const STORE_READER_DESCRIPTION =
 const STORE_UPDATER_DESCRIPTION =
   "Write access to GoHighLevel store / shipping: zone, rate, and carrier CRUD + store-setting create. " +
   "Operations: `create-shipping-zone`, `update-shipping-zone`, `delete-shipping-zone`, `create-shipping-rate`, `update-shipping-rate`, `delete-shipping-rate`, `create-shipping-carrier`, `update-shipping-carrier`, `delete-shipping-carrier`, `create-store-setting`. " +
+  'v1.1.1: `altId` and `altType: "location"` are auto-injected from `GHL_LOCATION_ID` env — omit unless overriding. ' +
   "All operations mutate state — gate behind explicit confirmation; do NOT auto-approve. " +
   'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
   'params: { router: "ghl-store-updater", operation: "<name>" } }` for the full schema.';
