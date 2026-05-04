@@ -32,9 +32,11 @@ UPSTREAM_DIR="${UPSTREAM_DIR:-$PARENT_DIR/GoHighLevel-MCP}"
 UPSTREAM_REPO="${UPSTREAM_REPO:-https://github.com/mastanley13/GoHighLevel-MCP.git}"
 
 # Pin the facade to a specific tag for reproducible installs. Override with
-# SALESMFAST_OPS_VERSION=v1.1.x or set to "main" for HEAD. v1.1.2 = current
-# stable as of 2026-04-28 (auto-inject + agency-block + UX hardening).
-SALESMFAST_OPS_VERSION="${SALESMFAST_OPS_VERSION:-v1.1.2-bridge-gaps}"
+# SALESMFAST_OPS_VERSION=v1.1.x or set to "main" for HEAD. v1.1.3 = current
+# stable as of 2026-05-04 — adds direct-axios bypass for contacts.search
+# (full param surface — pageLimit, filters array, cursor pagination) and
+# survey.list-submissions (correct endpoint URL).
+SALESMFAST_OPS_VERSION="${SALESMFAST_OPS_VERSION:-v1.1.3-search-bypass}"
 
 # ─── Output helpers ─────────────────────────────────────────────────────────
 GREEN="\033[0;32m"; RED="\033[0;31m"; YEL="\033[0;33m"; BLU="\033[0;34m"; NC="\033[0m"

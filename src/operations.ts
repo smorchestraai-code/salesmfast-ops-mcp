@@ -103,7 +103,7 @@ export const operations: Manifest = {
       search: {
         upstream: "search_contacts",
         description:
-          "Search contacts in the location with optional filters (query, pageLimit, etc.). Returns paginated results.",
+          "Search contacts in the configured location. Optional params: `query` (string fuzzy match), `pageLimit` (1-100, default 25), `startAfterId`+`startAfter` (cursor pagination — pass the last contact's id and dateUpdated millis from the prior page), `filters` object with keys `email` (string), `phone` (string), `tags` (string[]), `dateAdded` ({ startDate, endDate } ISO 8601). v1.1.3 also accepts those filter keys at the top level for convenience. Returns the full paginated payload from `/contacts/search`.",
         params: [],
         additionalProperties: true,
       },

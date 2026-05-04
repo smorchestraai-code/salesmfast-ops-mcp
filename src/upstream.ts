@@ -38,6 +38,15 @@ import type { ParsedEnv } from "./env.js";
 const GHL_API_VERSION = "2021-07-28";
 
 export interface Upstream {
+  /**
+   * v1.1.3 — direct GHLApiClient access for ops where the upstream tool-class
+   * wrapper is broken (drops params on the floor) and the underlying client
+   * method is correct. Used by:
+   *   - contacts.search (wrapper drops filters/pageLimit/startAfter/startAfterId)
+   *   - survey.list-submissions (wrapper hits wrong URL — fall back to axios)
+   * All other routers continue to call tool classes; this is a targeted fix.
+   */
+  readonly client: GHLApiClient;
   readonly calendarTools: CalendarTools;
   readonly contactTools: ContactTools;
   readonly conversationTools: ConversationTools;
@@ -71,6 +80,7 @@ export function createUpstream(env: ParsedEnv): Upstream {
     locationId: env.locationId,
   });
   return {
+    client,
     calendarTools: new CalendarTools(client),
     contactTools: new ContactTools(client),
     conversationTools: new ConversationTools(client),

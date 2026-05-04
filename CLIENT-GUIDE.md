@@ -2,6 +2,13 @@
 
 This is the single guide your operators need to install, configure, and use the SalesMfast Ops MCP server. It exposes the full GoHighLevel surface (~256 operations) as **35 facade tools** that any MCP host (Claude Desktop, Cowork, Claude Code) can use without hitting the host's tool-cap.
 
+> **v1.1.3 (2026-05-04) — direct-axios bypass for broken upstream paths.** Real-world session QA surfaced two endpoints where the upstream's tool-class wrappers drop params on the floor or hit the wrong URL. The facade now bypasses both, restoring full functionality:
+>
+> - `ghl-contacts-reader.search` — full param surface honored: `pageLimit` (1-100), `filters` (array clauses or convenience object with tags/email/phone/dateAdded), cursor pagination via `startAfterId`+`startAfter`. Pre-v1.1.3 was silently capped at 25 results with only email/phone filters working.
+> - `ghl-survey-reader.list-submissions` — calls correct GHL v2 endpoint (`/surveys/submissions?locationId=...`); upstream's wrapper hits a 404'ing path.
+>
+> Probe coverage: 32 read-path + 4 write-path = **36/36 GREEN**.
+
 ---
 
 ## Table of contents
@@ -197,7 +204,7 @@ Three discovery operations on `ghl-toolkit-help` will tell you the live shape of
 
 | Common operation | Router | Op | Required params |
 |---|---|---|---|
-| Search contacts (dedup, segment) | reader | `search` | — (filters via additionalProperties) |
+| Search contacts (full GHL search surface — v1.1.3) | reader | `search` | — *(see "Search surface" below)* |
 | Get contact full record | reader | `get` | `contactId` |
 | Find duplicate by email/phone | reader | `get-duplicate` | — |
 | List tasks for contact | reader | `list-tasks` | `contactId` |
@@ -226,6 +233,45 @@ mcp__salesmfast-ops__ghl-contacts-updater({
   selectSchema: {
     operation: "create",
     params: { firstName: "Ruba", email: "ruba@smorchestra.com", source: "linkedin" }
+  }
+})
+```
+
+### Search surface (v1.1.3)
+
+`ghl-contacts-reader.search` accepts the **full GHL `/contacts/search` API**. v1.1.3 routes around two upstream wrapper bugs that previously dropped most params on the floor (capping all searches at 25 results with only email/phone filters honored).
+
+| Param | Type | Notes |
+|---|---|---|
+| `query` | string | Full-text fuzzy match across name + email + phone + notes |
+| `pageLimit` | number 1–100 | Page size; default 25. Pre-v1.1.3 was silently capped at 25 |
+| `startAfterId` + `startAfter` | string + number | Cursor pagination — pass the **last contact's `id`** and **`dateUpdated` millis** from the prior page |
+| `filters` | array OR object | Array form: `[{ field, operator, value }, ...]` (passed through). Object form: `{ email, phone, tags: string[], dateAdded: { startDate, endDate } }` — v1.1.3 converts to clauses for you |
+| `email`, `phone`, `tags`, `dateAdded` | top-level | Convenience: hoisted into `filters` clauses for LLM callers that don't know about nesting |
+
+**Worked example — paginated tag search:**
+
+```js
+// Page 1: first 100 contacts tagged "qatar"
+const page1 = mcp__salesmfast-ops__ghl-contacts-reader({
+  selectSchema: {
+    operation: "search",
+    params: { tags: ["qatar"], pageLimit: 100 }
+  }
+})
+// → { contacts: [...100 contacts...], total: 847, traceId: "..." }
+
+// Page 2: next 100 — feed in the cursor from page 1's last contact
+const last = page1.contacts.at(-1)
+const page2 = mcp__salesmfast-ops__ghl-contacts-reader({
+  selectSchema: {
+    operation: "search",
+    params: {
+      tags: ["qatar"],
+      pageLimit: 100,
+      startAfterId: last.id,
+      startAfter: new Date(last.dateUpdated).getTime()
+    }
   }
 })
 ```
@@ -411,14 +457,14 @@ mcp__salesmfast-ops__ghl-social-updater({
 
 #### survey
 **Routers:** `ghl-survey-reader` (2 ops, **no updater** — read-only category)
-**What it controls:** surveys AND **forms** (GHL surfaces forms as surveys via the API).
+**What it controls:** surveys (only — GHL forms are NOT exposed by upstream, despite the original survey description claim).
 
 | Operation | Op | Params |
 |---|---|---|
-| List surveys / forms | `list` | — |
-| List submissions for one | `list-submissions` | (surveyId) |
+| List surveys | `list` | optional `skip`, `limit`, `type` |
+| List submissions | `list-submissions` | optional `surveyId`, `q`, `startAt`, `endAt`, `page`, `limit`. v1.1.3 fix — uses correct `/surveys/submissions` URL (upstream wrapper hits a 404) |
 
-**Use case:** every form submission on a SalesMfast / EO landing page becomes a "survey submission" here. Pull submissions periodically to enrich CRM contacts with form-field answers.
+**Use case:** survey submissions can enrich CRM contacts with response data. v1.1.3 routes `list-submissions` directly via axios because upstream's `ghl-api-client.getSurveySubmissions` builds the wrong endpoint URL. **Note:** GHL forms are not surfaced here — there's no upstream Forms tool class. If you need form submissions, use the GHL UI or extend the upstream.
 
 ---
 
@@ -649,6 +695,8 @@ The `key` field in each result is what you pass to `custom-field-v2-reader.get-b
 | `ghl-store-reader.*` and `ghl-store-updater.*` | `altId` + `altType: "location"` auto-injected | Pass to override |
 | `ghl-custom-field-v2-reader.get-by-object-key` | `objectKey` is required AND must be a `custom_objects.*` key — `contact` and `opportunity` are pre-blocked at the router with a redirect to the v1 endpoint | Use `ghl-location-reader.list-custom-fields` for contacts; `ghl-opportunities-reader.search` (read `customFields[]` on each opportunity) for opportunities |
 | `ghl-object-reader.list` | Strict schema, accepts no params | None — call with empty params |
+| `ghl-contacts-reader.search` (v1.1.3) | **Full GHL search surface honored** via direct-axios bypass: `pageLimit` 1-100, `filters` (array or convenience object), cursor pagination | Pass `pageLimit` to break out of default 25; pass `filters` for tag/email/phone/dateAdded narrowing. See [Search surface](#search-surface-v113) above. |
+| `ghl-survey-reader.list-submissions` (v1.1.3) | Calls correct GHL v2 endpoint via direct-axios — upstream's path-style URL returns 404 | No action needed; works out of the box |
 
 ### Agency-only operations (pre-blocked under PIT auth)
 

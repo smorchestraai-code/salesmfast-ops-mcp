@@ -157,7 +157,7 @@ export function buildRouters(
     activeCategories.includes("survey") &&
     Object.keys(operations.survey.reader).length > 0
   ) {
-    routers.push(createSurveyReader(upstream, env.deniedOps));
+    routers.push(createSurveyReader(upstream, env.deniedOps, env));
   }
 
   if (activeCategories.includes("invoice")) {

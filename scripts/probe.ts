@@ -93,9 +93,19 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
     expectedRouters: ["ghl-contacts-reader", "ghl-contacts-updater"],
     liveRead: {
       router: "ghl-contacts-reader",
+      // v1.1.3 — structural assertion: search returns at least one contact
+      // with the location's id baked in. Pinning to a specific contactId
+      // doesn't survive normal CRM churn (the prior fixture was deleted by
+      // a real user during routine ops). The new v1.1.3 assertions further
+      // down the probe exercise the wrapper-bypass path directly via
+      // pageLimit + filters.
       operation: "search",
-      expectFragment: EXPECTED_CONTACT_ID,
-      label: `ghl-contacts-reader search returned ${EXPECTED_CONTACT_ID}`,
+      params: { pageLimit: 1 },
+      // The location id is in every contact's locationId field — proves
+      // the search hit the right location and returned at least one contact.
+      expectFragment: '"locationId":"UNw9DraGO3eyEa5l4lkJ"',
+      label:
+        "ghl-contacts-reader search returned at least one contact in the configured location",
     },
   },
   {
@@ -619,6 +629,102 @@ async function main(): Promise<void> {
           : overwritten
             ? "FAIL: env-location tag returned — auto-inject silently overwrote user value"
             : `inconclusive; haystack first 240: ${haystack.slice(0, 240)}`,
+      );
+    }
+
+    // v1.1.3 — Positive: contacts.search filters now reach upstream.
+    // Pre-v1.1.3 the upstream wrapper dropped `filters` on the floor; with
+    // a never-existing tag in the filter, the result MUST be 0 contacts.
+    // If filters were silently dropped, we'd get the location's full first
+    // page instead.
+    {
+      const noSuchTag = "v113-probe-no-such-tag-zzz";
+      const result = (await a.request("tools/call", {
+        name: "ghl-contacts-reader",
+        arguments: {
+          selectSchema: {
+            operation: "search",
+            params: { filters: { tags: [noSuchTag] }, pageLimit: 50 },
+          },
+        },
+      })) as { content: { type: string; text: string }[] };
+      const text = result.content?.[0]?.text ?? "";
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = null;
+      }
+      const contacts =
+        (parsed &&
+          typeof parsed === "object" &&
+          (parsed as { contacts?: unknown[] }).contacts) ||
+        [];
+      const ok = Array.isArray(contacts) && contacts.length === 0;
+      record(
+        "v1.1.3 contacts.search filters honored (tag-not-exists → 0 results)",
+        ok,
+        ok
+          ? "filters reached upstream (0 results for impossible tag)"
+          : `expected 0 contacts; got ${Array.isArray(contacts) ? contacts.length : "non-array"}; first 200: ${text.slice(0, 200)}`,
+      );
+    }
+
+    // v1.1.3 — Positive: contacts.search pageLimit:1 honored (proves we
+    // forward pageLimit to upstream, not silently capping at 25).
+    {
+      const result = (await a.request("tools/call", {
+        name: "ghl-contacts-reader",
+        arguments: {
+          selectSchema: {
+            operation: "search",
+            params: { pageLimit: 1 },
+          },
+        },
+      })) as { content: { type: string; text: string }[] };
+      const text = result.content?.[0]?.text ?? "";
+      let parsed: { contacts?: unknown[] } | null = null;
+      try {
+        parsed = JSON.parse(text) as { contacts?: unknown[] };
+      } catch {
+        parsed = null;
+      }
+      const contacts = parsed?.contacts ?? [];
+      const ok = Array.isArray(contacts) && contacts.length === 1;
+      record(
+        "v1.1.3 contacts.search pageLimit:1 honored (returns exactly 1)",
+        ok,
+        ok
+          ? "pageLimit reached upstream"
+          : `expected 1 contact; got ${Array.isArray(contacts) ? contacts.length : "non-array"}`,
+      );
+    }
+
+    // v1.1.3 — Positive: survey.list-submissions hits the correct endpoint
+    // (axios bypass). Pre-v1.1.3 this returned 404 from the wrong upstream
+    // URL. Now we expect a clean { submissions, meta } envelope.
+    {
+      const result = (await a.request("tools/call", {
+        name: "ghl-survey-reader",
+        arguments: {
+          selectSchema: {
+            operation: "list-submissions",
+            params: { limit: 5 },
+          },
+        },
+      })) as { content: { type: string; text: string }[] };
+      const text = result.content?.[0]?.text ?? "";
+      const ok =
+        text.includes('"submissions"') &&
+        text.includes('"meta"') &&
+        !text.toLowerCase().includes("cannot get") &&
+        !text.includes("404");
+      record(
+        "v1.1.3 survey.list-submissions hits correct GHL v2 URL (no 404)",
+        ok,
+        ok
+          ? "envelope returned"
+          : `expected submissions+meta envelope; got: ${text.slice(0, 240)}`,
       );
     }
 

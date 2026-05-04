@@ -14,8 +14,54 @@ declare module "ghl-mcp-upstream/dist/clients/ghl-api-client.js" {
     version: string;
     locationId: string;
   }
+  /** Wrapped response shape returned by every client method. */
+  export interface ClientResponse<T = unknown> {
+    success: boolean;
+    data?: T;
+    error?: { message?: string; statusCode?: number };
+  }
+  /**
+   * Search-contacts param surface — what the api-client method actually
+   * supports (vs. what the broken contact-tools wrapper exposes).
+   * Used by routers/contacts.ts to bypass the wrapper for `search` op.
+   */
+  export interface SearchContactsParams {
+    locationId?: string;
+    query?: string;
+    pageLimit?: number;
+    limit?: number;
+    startAfterId?: string;
+    startAfter?: number;
+    filters?: {
+      email?: string;
+      phone?: string;
+      tags?: string[];
+      dateAdded?: { startDate?: string; endDate?: string };
+      [k: string]: unknown;
+    };
+  }
+  /**
+   * Minimal axios-shaped surface we use directly. Not a full Axios import
+   * dependency — just the call signatures for `get` and `post`.
+   */
+  export interface AxiosLike {
+    get<T = unknown>(
+      url: string,
+      config?: { params?: Record<string, unknown> },
+    ): Promise<{ status: number; data: T }>;
+    post<T = unknown>(
+      url: string,
+      body?: unknown,
+      config?: { params?: Record<string, unknown> },
+    ): Promise<{ status: number; data: T }>;
+  }
   export class GHLApiClient {
     constructor(config: GHLConfig);
+    /** v1.1.3 — direct axios for ops where upstream's wrapper is broken. */
+    readonly axiosInstance: AxiosLike;
+    getConfig(): GHLConfig;
+    /** v1.1.3 — bypasses broken contact-tools.searchContacts wrapper. */
+    searchContacts(params: SearchContactsParams): Promise<ClientResponse>;
   }
 }
 
