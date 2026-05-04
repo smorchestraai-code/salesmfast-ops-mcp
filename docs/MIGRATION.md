@@ -465,6 +465,56 @@ The custom-field-v2 API rejects `objectKey: "contact"` and `objectKey: "opportun
 - For opportunity custom fields → use `ghl-opportunities-reader.search` (read `customFields[]` on each opportunity)
 - For USER_DEFINED custom objects (e.g., `webinars`) → use `custom_objects.<key>` (list valid keys via `ghl-object-reader.list`)
 
+### v1.1.3 direct-axios bypass for broken upstream paths
+
+Two upstream paths return broken/incorrect results regardless of param shape; v1.1.3 bypasses them via direct axios calls through the api-client's pre-configured `axiosInstance`.
+
+#### `ghl-contacts-reader.search`
+
+The upstream's `contact-tools.searchContacts` wrapper silently drops `filters`, `pageLimit`, `startAfter`, and `startAfterId`. Worse, even calling the underlying `client.searchContacts` doesn't help — it re-shapes `filters` as an object, but GHL's current `/contacts/search` endpoint expects an **array** of filter clauses (`[{field, operator, value}, ...]`). Sending the object form triggers `value?.map is not a function` from GHL.
+
+v1.1.3 calls `client.axiosInstance.post('/contacts/search', payload)` directly with the correct array shape. The router accepts user input in three convenient forms:
+
+```js
+// 1. GHL-native array clauses (passed through verbatim)
+ghl-contacts-reader({
+  selectSchema: {
+    operation: "search",
+    params: {
+      pageLimit: 100,
+      filters: [
+        { field: "tags", operator: "contains", value: ["customer"] },
+        { field: "dateAdded", operator: "between", value: { gte: "2026-01-01", lte: "2026-12-31" } },
+      ],
+    },
+  },
+})
+
+// 2. Convenience object form (converted to clauses for you)
+ghl-contacts-reader({
+  selectSchema: {
+    operation: "search",
+    params: { filters: { tags: ["customer"], email: "x@y.com" } },
+  },
+})
+
+// 3. Top-level convenience (hoisted into clauses)
+ghl-contacts-reader({
+  selectSchema: {
+    operation: "search",
+    params: { tags: ["customer"], pageLimit: 50 },
+  },
+})
+```
+
+Cursor pagination via `startAfterId` + `startAfter` works as documented in GHL's API.
+
+#### `ghl-survey-reader.list-submissions`
+
+The upstream's `ghl-api-client.getSurveySubmissions` builds the wrong URL: `/locations/{locationId}/surveys/submissions` returns `404 Cannot GET ...` from GHL. The correct v2 shape is `/surveys/submissions?locationId={id}` (locationId as a query param, NOT a path segment).
+
+v1.1.3 calls `client.axiosInstance.get('/surveys/submissions', { params })` directly with the right URL. No caller-side change needed — submissions queries that previously 404'd now return clean `{ submissions, meta }` envelopes.
+
 ---
 
 ## Failure modes during migration

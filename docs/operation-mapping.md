@@ -13,7 +13,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
-| `search` | `search_contacts` | Search contacts in the location with optional filters (query, pageLimit, etc.). Returns paginated results. |
+| `search` | `search_contacts` | Search contacts in the configured location. Optional params: `query` (string fuzzy match), `pageLimit` (1-100, default 25), `startAfterId`+`startAfter` (cursor pagination — pass the last contact's id and dateUpdated millis from the prior page), `filters` object with keys `email` (string), `phone` (string), `tags` (string[]), `dateAdded` ({ startDate, endDate } ISO 8601). v1.1.3 also accepts those filter keys at the top level for convenience. Returns the full paginated payload from `/contacts/search`. |
 | `get` | `get_contact` | Get a single contact by id. |
 | `get-by-business` | `get_contacts_by_business` | List contacts associated with a business id. |
 | `get-duplicate` | `get_duplicate_contact` | Find a duplicate contact by email or phone in the location. |
