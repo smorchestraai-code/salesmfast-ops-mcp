@@ -73,11 +73,16 @@ if [[ -d "$FACADE_DIR/.git" ]]; then
   CURRENT_REF="$(cd "$FACADE_DIR" && git describe --tags --always 2>/dev/null || echo "unknown")"
   if [[ "$SALESMFAST_OPS_VERSION" != "main" && "$CURRENT_REF" != "$SALESMFAST_OPS_VERSION"* ]]; then
     log "Pinning facade to $SALESMFAST_OPS_VERSION (current: $CURRENT_REF)"
-    (cd "$FACADE_DIR" && git fetch --tags --quiet 2>/dev/null || true)
-    # Steps 4 + 5 mutate the tracked package.json (file: dep rewrite) and may
-    # mutate package-lock.json (npm install re-resolution). Discard those
-    # mutations before checkout so a re-run isn't blocked by a dirty tree.
-    (cd "$FACADE_DIR" && git checkout --quiet -- package.json package-lock.json 2>/dev/null || true)
+    (cd "$FACADE_DIR" && git fetch --tags --force --quiet 2>/dev/null || true)
+    # The repo is a deployment artifact — local edits aren't expected to
+    # survive an installer re-run. Force-clean before tag switch so *any*
+    # dirty file (mutated package.json, CRLF/LF drift, AV touch, manual
+    # edits) gets discarded. .env is gitignored so `git clean -fd` leaves it
+    # alone (no `-x`). Replaces the earlier file-by-file restore which kept
+    # missing newly-mutated files on re-runs.
+    log "Discarding any local changes (installer treats repo as deployment artifact)"
+    (cd "$FACADE_DIR" && git reset --hard --quiet HEAD 2>/dev/null || true)
+    (cd "$FACADE_DIR" && git clean -fd --quiet 2>/dev/null || true)
     if (cd "$FACADE_DIR" && git rev-parse --verify --quiet "$SALESMFAST_OPS_VERSION" >/dev/null); then
       (cd "$FACADE_DIR" && git checkout --quiet "$SALESMFAST_OPS_VERSION") \
         || warn "checkout $SALESMFAST_OPS_VERSION failed — continuing on $CURRENT_REF"
@@ -96,10 +101,9 @@ step "2/9 Upstream GoHighLevel-MCP"
 
 if [[ -d "$UPSTREAM_DIR/.git" ]]; then
   log "Existing upstream at $UPSTREAM_DIR — pulling latest"
-  # Step 3 below runs `npm install` in the upstream which can re-resolve
-  # and rewrite tracked package-lock.json. Discard before pulling so a
-  # re-run isn't blocked by a dirty tree.
-  (cd "$UPSTREAM_DIR" && git checkout --quiet -- package-lock.json 2>/dev/null || true)
+  # Same deployment-artifact treatment as the facade: force-clean before pull.
+  (cd "$UPSTREAM_DIR" && git reset --hard --quiet HEAD 2>/dev/null || true)
+  (cd "$UPSTREAM_DIR" && git clean -fd --quiet 2>/dev/null || true)
   (cd "$UPSTREAM_DIR" && git pull --ff-only) || warn "git pull failed (continuing)"
 elif [[ -d "$UPSTREAM_DIR" ]]; then
   fail "$UPSTREAM_DIR exists but is not a git repo. Move it aside or set UPSTREAM_DIR."
