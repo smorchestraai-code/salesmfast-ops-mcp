@@ -99,15 +99,23 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
 }
 
 Push-Location $InstallDir
+# Step 5 below mutates the tracked package.json on every run (absolute-path
+# rewrite of the `ghl-mcp-upstream` file: dep). On re-runs that dirty working
+# tree blocks `git checkout <tag>`. Discard the known mutation up-front —
+# we're about to rewrite it again anyway.
+& git checkout --quiet -- package.json 2>&1 | Out-Null
 if ($Version -ne "main") {
   Write-Log "Pinning to $Version"
-  & git checkout --quiet $Version 2>$null
+  # 2>&1 | Out-Null swallows stderr into the success channel so that
+  # $ErrorActionPreference = "Stop" can't promote a stderr line to a
+  # terminating NativeCommandError. We still rely on $LASTEXITCODE.
+  & git checkout --quiet $Version 2>&1 | Out-Null
   if ($LASTEXITCODE -ne 0) {
-    Write-Warn "Tag $Version not found — staying on current branch"
+    Write-Warn "Tag $Version not found or checkout failed — staying on current branch"
   }
 } else {
-  & git checkout --quiet main
-  & git pull --ff-only --quiet
+  & git checkout --quiet main 2>&1 | Out-Null
+  & git pull --ff-only --quiet 2>&1 | Out-Null
 }
 Write-Ok "Facade ready at $InstallDir ($((git describe --tags --always 2>$null) -join ''))"
 
