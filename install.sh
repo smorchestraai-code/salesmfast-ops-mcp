@@ -75,7 +75,10 @@ if [[ -d "$FACADE_DIR/.git" ]]; then
     log "Pinning facade to $SALESMFAST_OPS_VERSION (current: $CURRENT_REF)"
     (cd "$FACADE_DIR" && git fetch --tags --quiet 2>/dev/null || true)
     if (cd "$FACADE_DIR" && git rev-parse --verify --quiet "$SALESMFAST_OPS_VERSION" >/dev/null); then
-      (cd "$FACADE_DIR" && git checkout --quiet "$SALESMFAST_OPS_VERSION") \
+      if [[ -n "$(cd "$FACADE_DIR" && git status --porcelain)" ]]; then
+        log "Resetting local edits — installer manages this directory"
+      fi
+      (cd "$FACADE_DIR" && git checkout --force --quiet "$SALESMFAST_OPS_VERSION") \
         || warn "checkout $SALESMFAST_OPS_VERSION failed — continuing on $CURRENT_REF"
     else
       warn "tag $SALESMFAST_OPS_VERSION not found locally; continuing on $CURRENT_REF (set SALESMFAST_OPS_VERSION=main to skip pinning)"
@@ -92,7 +95,8 @@ step "2/9 Upstream GoHighLevel-MCP"
 
 if [[ -d "$UPSTREAM_DIR/.git" ]]; then
   log "Existing upstream at $UPSTREAM_DIR — pulling latest"
-  (cd "$UPSTREAM_DIR" && git pull --ff-only) || warn "git pull failed (continuing)"
+  (cd "$UPSTREAM_DIR" && git fetch --quiet origin && git reset --hard --quiet origin/HEAD) \
+    || warn "upstream sync failed (continuing)"
 elif [[ -d "$UPSTREAM_DIR" ]]; then
   fail "$UPSTREAM_DIR exists but is not a git repo. Move it aside or set UPSTREAM_DIR."
 else

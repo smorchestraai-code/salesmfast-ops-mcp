@@ -99,15 +99,19 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
 }
 
 Push-Location $InstallDir
+$dirty = (& git status --porcelain 2>$null) -join ""
+if ($dirty) {
+  Write-Log "Resetting local edits — installer manages this directory"
+}
 if ($Version -ne "main") {
   Write-Log "Pinning to $Version"
-  & git checkout --quiet $Version 2>$null
+  & git checkout --force --quiet $Version 2>$null
   if ($LASTEXITCODE -ne 0) {
     Write-Warn "Tag $Version not found — staying on current branch"
   }
 } else {
-  & git checkout --quiet main
-  & git pull --ff-only --quiet
+  & git checkout --force --quiet main
+  & git reset --hard --quiet origin/main
 }
 Write-Ok "Facade ready at $InstallDir ($((git describe --tags --always 2>$null) -join ''))"
 
@@ -117,7 +121,8 @@ Write-Step "3/9  Upstream GoHighLevel-MCP"
 if (Test-Path (Join-Path $UpstreamDir ".git")) {
   Write-Log "Existing upstream at $UpstreamDir — pulling latest"
   Push-Location $UpstreamDir
-  & git pull --ff-only --quiet
+  & git fetch --quiet origin
+  & git reset --hard --quiet origin/HEAD
   Pop-Location
 } elseif (Test-Path $UpstreamDir) {
   Fail "$UpstreamDir exists but is not a git repo. Move it aside or set INSTALL_DIR."
