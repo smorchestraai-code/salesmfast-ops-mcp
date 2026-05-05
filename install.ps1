@@ -99,11 +99,12 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
 }
 
 Push-Location $InstallDir
-# Step 5 below mutates the tracked package.json on every run (absolute-path
-# rewrite of the `ghl-mcp-upstream` file: dep). On re-runs that dirty working
-# tree blocks `git checkout <tag>`. Discard the known mutation up-front —
-# we're about to rewrite it again anyway.
-& git checkout --quiet -- package.json 2>&1 | Out-Null
+# Steps 5 + 6 below mutate the tracked package.json (absolute-path rewrite of
+# the `ghl-mcp-upstream` file: dep) and may mutate package-lock.json (npm
+# install re-resolution). On re-runs that dirty working tree blocks
+# `git checkout <tag>`. Discard the known mutations up-front — we rewrite
+# them again anyway.
+& git checkout --quiet -- package.json package-lock.json 2>&1 | Out-Null
 if ($Version -ne "main") {
   Write-Log "Pinning to $Version"
   # 2>&1 | Out-Null swallows stderr into the success channel so that
@@ -125,7 +126,11 @@ Write-Step "3/9  Upstream GoHighLevel-MCP"
 if (Test-Path (Join-Path $UpstreamDir ".git")) {
   Write-Log "Existing upstream at $UpstreamDir — pulling latest"
   Push-Location $UpstreamDir
-  & git pull --ff-only --quiet
+  # Step 4 below runs `npm install` in the upstream, which can re-resolve
+  # and rewrite the tracked package-lock.json. Discard any such mutation
+  # before pulling so a re-run isn't blocked by a dirty tree.
+  & git checkout --quiet -- package-lock.json 2>&1 | Out-Null
+  & git pull --ff-only --quiet 2>&1 | Out-Null
   Pop-Location
 } elseif (Test-Path $UpstreamDir) {
   Fail "$UpstreamDir exists but is not a git repo. Move it aside or set INSTALL_DIR."
