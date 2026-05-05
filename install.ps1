@@ -33,6 +33,23 @@ function Write-Log($msg)  { Write-Host "  [..] $msg" -ForegroundColor Blue }
 function Write-Warn($msg) { Write-Host "  [!!] $msg" -ForegroundColor Yellow }
 function Fail($msg)       { Write-Host "  [FAIL] $msg" -ForegroundColor Red; exit 1 }
 
+# PowerShell 7.3+ defaults PSNativeCommandUseErrorActionPreference=$true, which
+# promotes any stderr line from a native command into a terminating
+# NativeCommandError under $ErrorActionPreference="Stop". `git` writes
+# informational + error output to stderr (e.g. "Your local changes...",
+# "Switched to branch..."), so a plain `& git ...` aborts the script even when
+# we want to inspect $LASTEXITCODE and continue. Route every git call through
+# this helper, which locally drops to "Continue" so non-zero exits become data.
+function Invoke-Git {
+  $prevPref = $global:ErrorActionPreference
+  $global:ErrorActionPreference = "Continue"
+  try {
+    & git $args 2>&1
+  } finally {
+    $global:ErrorActionPreference = $prevPref
+  }
+}
+
 # ─── Config ─────────────────────────────────────────────────────────────────
 $FacadeRepo  = "https://github.com/smorchestraai-code/salesmfast-ops-mcp.git"
 $UpstreamRepo = "https://github.com/mastanley13/GoHighLevel-MCP.git"
@@ -88,35 +105,36 @@ Write-Step "2/9  Facade repo"
 if (Test-Path (Join-Path $InstallDir ".git")) {
   Write-Log "Existing facade at $InstallDir — updating"
   Push-Location $InstallDir
-  & git fetch --tags --quiet
+  Invoke-Git fetch --tags --force --quiet | Out-Null
   Pop-Location
 } elseif (Test-Path $InstallDir) {
   Fail "$InstallDir exists but is not a git repo. Delete or move it, then re-run."
 } else {
   Write-Log "Cloning facade into $InstallDir"
-  & git clone --quiet $FacadeRepo $InstallDir
+  Invoke-Git clone --quiet $FacadeRepo $InstallDir | Out-Null
   if ($LASTEXITCODE -ne 0) { Fail "git clone failed for $FacadeRepo" }
 }
 
 Push-Location $InstallDir
-# Steps 5 + 6 below mutate the tracked package.json (absolute-path rewrite of
-# the `ghl-mcp-upstream` file: dep) and may mutate package-lock.json (npm
-# install re-resolution). On re-runs that dirty working tree blocks
-# `git checkout <tag>`. Discard the known mutations up-front — we rewrite
-# them again anyway.
-& git checkout --quiet -- package.json package-lock.json 2>&1 | Out-Null
+# The repo is a deployment artifact, not a working copy — local edits aren't
+# expected to survive an installer re-run. Force-clean before tag switch so
+# *any* dirty file (mutated package.json, CRLF/LF drift, AV touch, manual
+# edits) gets discarded. .env is gitignored so `git clean -fd` leaves it
+# alone (no `-x` flag). This replaces an earlier whack-a-mole loop where we
+# kept adding files to a "restore before checkout" list (PR #15: package.json,
+# PR #17: package-lock.json) — every re-run surfaced another dirty file.
+Write-Log "Discarding any local changes (installer treats repo as deployment artifact)"
+Invoke-Git reset --hard --quiet HEAD | Out-Null
+Invoke-Git clean -fd --quiet | Out-Null
 if ($Version -ne "main") {
   Write-Log "Pinning to $Version"
-  # 2>&1 | Out-Null swallows stderr into the success channel so that
-  # $ErrorActionPreference = "Stop" can't promote a stderr line to a
-  # terminating NativeCommandError. We still rely on $LASTEXITCODE.
-  & git checkout --quiet $Version 2>&1 | Out-Null
+  Invoke-Git checkout --quiet $Version | Out-Null
   if ($LASTEXITCODE -ne 0) {
     Write-Warn "Tag $Version not found or checkout failed — staying on current branch"
   }
 } else {
-  & git checkout --quiet main 2>&1 | Out-Null
-  & git pull --ff-only --quiet 2>&1 | Out-Null
+  Invoke-Git checkout --quiet main | Out-Null
+  Invoke-Git pull --ff-only --quiet | Out-Null
 }
 Write-Ok "Facade ready at $InstallDir ($((git describe --tags --always 2>$null) -join ''))"
 
@@ -126,17 +144,16 @@ Write-Step "3/9  Upstream GoHighLevel-MCP"
 if (Test-Path (Join-Path $UpstreamDir ".git")) {
   Write-Log "Existing upstream at $UpstreamDir — pulling latest"
   Push-Location $UpstreamDir
-  # Step 4 below runs `npm install` in the upstream, which can re-resolve
-  # and rewrite the tracked package-lock.json. Discard any such mutation
-  # before pulling so a re-run isn't blocked by a dirty tree.
-  & git checkout --quiet -- package-lock.json 2>&1 | Out-Null
-  & git pull --ff-only --quiet 2>&1 | Out-Null
+  # Same deployment-artifact treatment as the facade: force-clean before pull.
+  Invoke-Git reset --hard --quiet HEAD | Out-Null
+  Invoke-Git clean -fd --quiet | Out-Null
+  Invoke-Git pull --ff-only --quiet | Out-Null
   Pop-Location
 } elseif (Test-Path $UpstreamDir) {
   Fail "$UpstreamDir exists but is not a git repo. Move it aside or set INSTALL_DIR."
 } else {
   Write-Log "Cloning upstream into $UpstreamDir"
-  & git clone --quiet $UpstreamRepo $UpstreamDir
+  Invoke-Git clone --quiet $UpstreamRepo $UpstreamDir | Out-Null
   if ($LASTEXITCODE -ne 0) { Fail "git clone failed for $UpstreamRepo" }
 }
 Write-Ok "Upstream ready at $UpstreamDir"
