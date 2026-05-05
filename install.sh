@@ -74,6 +74,9 @@ if [[ -d "$FACADE_DIR/.git" ]]; then
   if [[ "$SALESMFAST_OPS_VERSION" != "main" && "$CURRENT_REF" != "$SALESMFAST_OPS_VERSION"* ]]; then
     log "Pinning facade to $SALESMFAST_OPS_VERSION (current: $CURRENT_REF)"
     (cd "$FACADE_DIR" && git fetch --tags --quiet 2>/dev/null || true)
+    # Step 4 mutates the tracked package.json on every run. Discard that
+    # mutation before checkout so a re-run isn't blocked by a dirty tree.
+    (cd "$FACADE_DIR" && git checkout --quiet -- package.json 2>/dev/null || true)
     if (cd "$FACADE_DIR" && git rev-parse --verify --quiet "$SALESMFAST_OPS_VERSION" >/dev/null); then
       (cd "$FACADE_DIR" && git checkout --quiet "$SALESMFAST_OPS_VERSION") \
         || warn "checkout $SALESMFAST_OPS_VERSION failed — continuing on $CURRENT_REF"
