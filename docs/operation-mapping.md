@@ -60,7 +60,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `get` | `get_conversation` | Get a single conversation by id. |
 | `get-message` | `get_message` | Get a single message by id. |
 | `get-email-message` | `get_email_message` | Get a single email message by id. |
-| `get-recent-messages` | `get_recent_messages` | List recent messages in a conversation. |
+| `get-recent-messages` | `get_recent_messages` | List recent messages ACROSS conversations for the location (monitoring view, NOT scoped to a single conversation). Use `get { conversationId }` to fetch one conversation's full thread. |
 | `get-message-recording` | `get_message_recording` | Get the recording (binary URL) for a voice message. |
 | `get-message-transcription` | `get_message_transcription` | Get the transcription text for a voice message. |
 | `download-transcription` | `download_transcription` | Download the transcription file for a voice message. |
@@ -91,7 +91,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `list-groups` | `get_calendar_groups` | List all calendar groups in the location. |
 | `list` | `get_calendars` | List calendars, optionally filtered to a group. |
 | `get` | `get_calendar` | Get a single calendar by id. |
-| `list-events` | `get_calendar_events` | List events for a calendar in a date range. |
+| `list-events` | `get_calendar_events` | List events/appointments for a calendar in a date range. Date params accept ISO date (YYYY-MM-DD), full ISO 8601, or epoch milliseconds — upstream converts. |
 | `list-free-slots` | `get_free_slots` | List free slots in a calendar for a date range. |
 | `get-appointment` | `get_appointment` | Get a single appointment by id. |
 | `get-blocked-slots` | `get_blocked_slots` | List blocked-time slots on a calendar. |
@@ -215,7 +215,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `create-template` | `create_email_template` | Create a new email template. |
 | `update-template` | `update_email_template` | Update an existing email template. |
 | `delete-template` | `delete_email_template` | Delete an email template. |
-| `verify-email` | `verify_email` | Verify an email address via GHL Email ISV (deliverability check). NOTE: routed through EmailISVTools, not EmailTools — handled at dispatch closure. |
+| `verify-email` | `verify_email` | Verify an email address (or contact) via GHL Email ISV — deliverability check that DEDUCTS CHARGES from the location wallet. Pass `type: "email"` + `verify: "<email-address>"` to verify by literal email, or `type: "contact"` + `verify: "<contactId>"` to verify by contact id. Routed through EmailISVTools (not EmailTools) at dispatch. |
 
 ## social-media
 
@@ -231,12 +231,12 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `get-tags-by-ids` | `get_social_tags_by_ids` | Look up multiple social-post tags by id. |
 | `get-categories` | `get_social_categories` | List social-post categories. |
 | `get-category` | `get_social_category` | Get one social-post category by id. |
-| `get-google-locations` | `google` | List Google Business Profile locations for an OAuth account. |
-| `get-facebook-pages` | `facebook` | List Facebook pages for an OAuth account. |
-| `get-instagram-accounts` | `instagram` | List Instagram accounts for an OAuth connection. |
-| `get-linkedin-accounts` | `linkedin` | List LinkedIn accounts (personal + pages) for an OAuth connection. |
-| `get-twitter-profile` | `twitter` | Get the Twitter/X profile for an OAuth connection. |
-| `get-tiktok-profile` | `tiktok` | Get the TikTok profile for an OAuth connection. |
+| `get-google-locations` | `get_platform_accounts_PLATFORM_google` | List Google Business Profile locations for an OAuth account. |
+| `get-facebook-pages` | `get_platform_accounts_PLATFORM_facebook` | List Facebook pages for an OAuth account. |
+| `get-instagram-accounts` | `get_platform_accounts_PLATFORM_instagram` | List Instagram accounts for an OAuth connection. |
+| `get-linkedin-accounts` | `get_platform_accounts_PLATFORM_linkedin` | List LinkedIn accounts (personal + pages) for an OAuth connection. |
+| `get-twitter-profile` | `get_platform_accounts_PLATFORM_twitter` | Get the Twitter/X profile for an OAuth connection. |
+| `get-tiktok-profile` | `get_platform_accounts_PLATFORM_tiktok` | Get the TikTok profile for an OAuth connection. |
 
 ### `ghl-social-media-updater` (6 operations)
 
@@ -257,6 +257,15 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 |-----------|---------------|-------------|
 | `list` | `ghl_get_surveys` | List all surveys (and forms; GHL surfaces forms as surveys via API) for the location. |
 | `list-submissions` | `ghl_get_survey_submissions` | List submissions for a survey/form. |
+
+## forms
+
+### `ghl-forms-reader` (2 operations)
+
+| Operation | Upstream tool | Description |
+|-----------|---------------|-------------|
+| `list` | `ghl_list_forms_DIRECT_AXIOS` | List all forms defined for the location (Pre-Call Qualifier, intake forms, scorecards, etc.). Form schema (fields/questions) is included in each form object — there is no separate get-by-id endpoint in GHL's public v2 API. |
+| `list-submissions` | `ghl_list_form_submissions_DIRECT_AXIOS` | List form submissions, optionally filtered by formId and date range. Each submission includes the contact id and the answers payload. |
 
 ## invoice
 
@@ -351,7 +360,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `list-shipping-zones` | `ghl_list_shipping_zones` | List shipping zones for the location. |
 | `get-shipping-zone` | `ghl_get_shipping_zone` | Get a single shipping zone by id. |
 | `list-shipping-rates` | `ghl_list_shipping_rates` | List shipping rates for a zone. |
-| `get-shipping-rate` | `ghl_get_shipping_rate` | Get a single shipping rate by id. |
+| `get-shipping-rate` | `ghl_get_shipping_rate` | Get a single shipping rate by id. Upstream requires BOTH `shippingZoneId` and `shippingRateId` (rates are zone-scoped). |
 | `list-shipping-carriers` | `ghl_list_shipping_carriers` | List shipping carriers for the location. |
 | `get-shipping-carrier` | `ghl_get_shipping_carrier` | Get a single shipping carrier by id. |
 | `get-available-rates` | `ghl_get_available_shipping_rates` | Get available shipping rates for an order (matches zone+rate config). |
@@ -365,8 +374,8 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | `update-shipping-zone` | `ghl_update_shipping_zone` | Update an existing shipping zone. |
 | `delete-shipping-zone` | `ghl_delete_shipping_zone` | Delete a shipping zone by id. |
 | `create-shipping-rate` | `ghl_create_shipping_rate` | Create a new shipping rate (within a zone). |
-| `update-shipping-rate` | `ghl_update_shipping_rate` | Update an existing shipping rate. |
-| `delete-shipping-rate` | `ghl_delete_shipping_rate` | Delete a shipping rate by id. |
+| `update-shipping-rate` | `ghl_update_shipping_rate` | Update an existing shipping rate. Requires BOTH `shippingZoneId` and `shippingRateId`. |
+| `delete-shipping-rate` | `ghl_delete_shipping_rate` | Delete a shipping rate by id. Requires BOTH `shippingZoneId` and `shippingRateId`. |
 | `create-shipping-carrier` | `ghl_create_shipping_carrier` | Create a new shipping carrier. |
 | `update-shipping-carrier` | `ghl_update_shipping_carrier` | Update an existing shipping carrier. |
 | `delete-shipping-carrier` | `ghl_delete_shipping_carrier` | Delete a shipping carrier by id. |
@@ -379,7 +388,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
 | `get-sites` | `get_blog_sites` | List blog sites (sub-blogs) defined for the location. |
-| `get-posts` | `get_blog_posts` | List blog posts in a site. |
+| `get-posts` | `get_blog_posts` | List blog posts in a site. Defaults to PUBLISHED only — pass `status: "DRAFT" | "SCHEDULED" | "ARCHIVED"` to filter to a different state, or call multiple times to aggregate. GHL returns 0 results when status is omitted; the router defaults to PUBLISHED. |
 | `get-authors` | `get_blog_authors` | List blog authors. |
 | `get-categories` | `get_blog_categories` | List blog categories. |
 | `check-url-slug` | `check_url_slug` | Check whether a URL slug is available for a blog post. |
@@ -433,7 +442,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
 | `list` | `get_all_objects` | List all custom object schemas defined for the location. |
-| `get-schema` | `get_object_schema` | Get a single custom object schema by id. |
+| `get-schema` | `get_object_schema` | Get a single object schema by KEY (not id). Use the `key` from `list` results — e.g. "custom_objects.webinars" for custom objects, or "contact" / "opportunity" / "business" for system objects. |
 | `get-record` | `get_object_record` | Get a single custom object record by id. |
 | `search-records` | `search_object_records` | Search custom object records with optional filters. |
 
@@ -442,7 +451,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 | Operation | Upstream tool | Description |
 |-----------|---------------|-------------|
 | `create-schema` | `create_object_schema` | Create a new custom object schema. |
-| `update-schema` | `update_object_schema` | Update an existing custom object schema. |
+| `update-schema` | `update_object_schema` | Update an existing object schema. Identified by `key` (NOT `schemaId`); upstream additionally requires `searchableProperties` (string[] of property names to make searchable). |
 | `create-record` | `create_object_record` | Create a new custom object record. |
 | `update-record` | `update_object_record` | Update an existing custom object record. |
 | `delete-record` | `delete_object_record` | Delete a custom object record by id. |
@@ -455,7 +464,7 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 |-----------|---------------|-------------|
 | `list` | `ghl_get_all_associations` | List all associations (custom-object relationship definitions) for the location. |
 | `get-by-id` | `ghl_get_association_by_id` | Get a single association by id. |
-| `get-by-key` | `ghl_get_association_by_key` | Get an association by its key. |
+| `get-by-key` | `ghl_get_association_by_key` | Get an association by its key name. |
 | `get-by-object-key` | `ghl_get_association_by_object_key` | Get associations defined for a specific custom-object key. |
 | `get-relations-by-record` | `ghl_get_relations_by_record` | List relations (record-to-record links) for a single record. |
 
@@ -473,9 +482,9 @@ operation as `<router-name>.<operation>` via the `selectSchema` discriminated un
 
 ## Totals
 
-- Reader operations: **112**
+- Reader operations: **114**
 - Updater operations: **144**
-- Total: **256**
+- Total: **258**
 
 Phase 1 vertical slice ships only `ghl-calendars-reader`. Other categories register
 when their per-category slice lands in a subsequent PR.

@@ -94,7 +94,23 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
         throw methodNotFound(operation, validOps);
       }
 
-      // 2. ajv schema validation
+      // 2. Pre-block agency-only ops BEFORE ajv (v1.1.4) — when an op is
+      // agency-only, the schema-validation message ("must have required
+      // property 'params'") would shadow the actually-actionable agency
+      // diagnostic. Surface the agency message first; operators on PITs
+      // can't call this op no matter what params they supply.
+      if (
+        typeof operation === "string" &&
+        config.agencyOnlyOps?.includes(operation)
+      ) {
+        throw invalidParams(
+          `Operation "${operation}" requires an agency OAuth token; PITs (Private Integration Tokens) are location-scoped and cannot call agency-level endpoints. ` +
+            `For location-scoped equivalents see CLIENT-GUIDE.md → "Agency-only operations". ` +
+            `Configure the location once via GHL_LOCATION_ID in .env and use the location-scoped read ops instead.`,
+        );
+      }
+
+      // 3. ajv schema validation
       if (!validate(input)) {
         const err =
           (validate.errors?.[0] as ErrorObject | undefined) ?? undefined;
@@ -108,7 +124,7 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
         throw invalidParams(detail, path);
       }
 
-      // 3. Resolve op spec (operation guaranteed valid post-validation)
+      // 4. Resolve op spec (operation guaranteed valid post-validation)
       const userParams = select?.params ?? {};
       const opSpec = operation ? ops[operation] : undefined;
       if (!opSpec) {
@@ -121,17 +137,7 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
         throw methodNotFound("(missing)", validOps);
       }
 
-      // 3a. Pre-block agency-only ops (v1.1.1) — fail fast with clear message
-      // instead of letting upstream return a cryptic 403.
-      if (config.agencyOnlyOps?.includes(operation)) {
-        throw invalidParams(
-          `Operation "${operation}" requires an agency OAuth token; PITs (Private Integration Tokens) are location-scoped and cannot call agency-level endpoints. ` +
-            `For location-scoped equivalents see CLIENT-GUIDE.md → "Agency-only operations". ` +
-            `Configure the location once via GHL_LOCATION_ID in .env and use the location-scoped read ops instead.`,
-        );
-      }
-
-      // 3b. Auto-inject context defaults from env (v1.1.1) — fills in
+      // 5. Auto-inject context defaults from env (v1.1.1) — fills in
       // locationId / altId / altType when caller omitted them. User-supplied
       // values always win.
       //
@@ -151,7 +157,7 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
         }
       }
 
-      // 3c. Per-op pre-validation hook (v1.1.1) — short-circuit common
+      // 6. Per-op pre-validation hook (v1.1.1) — short-circuit common
       // upstream-cryptic errors with operator-friendly guidance.
       if (config.preValidate) {
         config.preValidate(operation, params);
@@ -170,12 +176,60 @@ export function createCategoryRouter(config: CategoryRouterConfig): RouterDef {
           statusCode?: number;
           message?: string;
         };
-        const status = err.status ?? err.statusCode ?? 500;
         const message = err.message ?? String(e);
-        throw upstreamError(config.category, status, message);
+        // Upstream's GHLApiClient.handleApiError throws plain Errors whose
+        // message embeds `GHL API Error (NNN): ...` but does NOT set a
+        // `status` field. Without parsing, we'd fall through to 500 and
+        // the operator would see the misleading double-wrap
+        // `[upstream X] 500 GHL API Error (401): Invalid JWT`. Extract
+        // the real upstream status so the envelope reflects reality.
+        const embedded = parseEmbeddedStatus(message);
+        const status = err.status ?? err.statusCode ?? embedded ?? 500;
+        const enriched = enrichForKnownStatuses(status, message);
+        throw upstreamError(config.category, status, enriched);
       }
     },
   };
+}
+
+/**
+ * Parse `GHL API Error (NNN): ...` (or nested forms like
+ * `GHL API Error (500): GHL API Error (401): ...`) and return the
+ * INNERMOST numeric status — that's the real upstream HTTP status.
+ * Returns undefined if no embedded status is present.
+ */
+function parseEmbeddedStatus(message: string): number | undefined {
+  const matches = [...message.matchAll(/GHL API Error \((\d+)\):/g)];
+  if (matches.length === 0) return undefined;
+  const last = matches[matches.length - 1];
+  if (!last) return undefined;
+  const captured = last[1];
+  if (typeof captured !== "string") return undefined;
+  const n = Number(captured);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * Append actionable guidance to known auth-flavored failures. Triggered by
+ * the May-2026 builder report: operators saw bare `Invalid JWT` with no
+ * pointer to remediation. Surface the diagnostic op inline.
+ */
+function enrichForKnownStatuses(status: number, message: string): string {
+  if (status === 401) {
+    return (
+      `${message} — bearer token rejected by GHL. ` +
+      `Run \`ghl-toolkit-help { operation: "token-status" }\` to see token shape, expiry (if JWT), and a live verify result. ` +
+      `Most common fix: rotate GHL_API_KEY (Private Integration Token in agency/location settings) and restart the MCP.`
+    );
+  }
+  if (status === 403) {
+    return (
+      `${message} — token authenticates but lacks scope for this endpoint. ` +
+      `Re-issue the PIT with the missing scope checked (see README "Required scopes"). ` +
+      `Run \`ghl-toolkit-help { operation: "token-status" }\` to see decoded scopes if it's a JWT.`
+    );
+  }
+  return message;
 }
 
 function applyDeniedOps(

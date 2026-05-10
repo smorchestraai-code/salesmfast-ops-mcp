@@ -1,8 +1,8 @@
 # salesmfast-ops-mcp
 
-Facade-router MCP server. Wraps the upstream 280-tool [GoHighLevel-MCP](../GoHighLevel-MCP) as **35 category-level routers across 18 categories**, sized to fit under host tool caps (~128 tools per session).
+Facade-router MCP server. Wraps the upstream 280-tool [GoHighLevel-MCP](../GoHighLevel-MCP) as **36 category-level routers across 19 categories**, sized to fit under host tool caps (~128 tools per session).
 
-**Status (v1.1.2 — 2026-04-28):** ✅ Phase 1 + Phase 2 closed (full upstream coverage); UX hardening (auto-inject + agency-block + custom-field-v2 redirect) shipped. **34 routers + `ghl-toolkit-help` = 35 facade tools** covering ~259 operations. Cap thesis proven and validated against two operator machines (Mamoun, Lana).
+**Status (v1.1.4 — 2026-05-10):** ✅ Phase 1 + Phase 2 closed (full upstream coverage); UX hardening (auto-inject + agency-block + custom-field-v2 redirect) shipped; bug-fix slice (forms reader, `list-events` + `get-schema` param shape, blog-status default, `token-status` diagnostic, 401 enrichment) landed. **35 routers + `ghl-toolkit-help` = 36 facade tools** covering ~261 operations. Validated end-to-end against live GHL by `npm run probe` (31 read-path assertions green) + targeted smoke (6/6 fixed-bug round-trips green).
 
 > **Quick install for clients:** see [`CLIENT-GUIDE.md`](./CLIENT-GUIDE.md) — single-doc walkthrough + automated `install.sh` (clones upstream, builds, wires Claude Desktop config, verifies via probe).
 
@@ -54,6 +54,50 @@ The upstream is pinned via `file:` link to `../GoHighLevel-MCP`. `install.sh` cl
 
 PIT keys go in `.env` only. `.env` is gitignored. The `secret-scanner-v2` pre-commit hook blocks any committed file containing a `<KEY-NAME>=...` pattern, regardless of whether the value looks real.
 
+### Required PIT scopes
+
+When minting a Private Integration Token, check these scopes (Settings → Integrations → Private Integrations → New token):
+
+**Read-side (covers all `*-reader` routers):**
+- `contacts.readonly`, `contacts.notes.readonly`
+- `calendars.readonly`, `calendars.events.readonly`
+- `conversations.readonly`, `conversations.messages.readonly`
+- `opportunities.readonly`
+- `locations.readonly`, `locations/customFields.readonly`, `locations/tags.readonly`
+- `workflows.readonly`
+- `emails.builder.readonly`, `emails/schedule.readonly`
+- `socialplanner/account.readonly`, `socialplanner/post.readonly`, `socialplanner/category.readonly`, `socialplanner/tag.readonly` — **without these, `ghl-social-reader.get-accounts` returns 0 even when accounts are connected in the UI**
+- `surveys.readonly`, `forms.readonly` — `forms.readonly` is independent of `surveys.readonly`; both are needed
+- `invoices.readonly`, `invoices/schedule.readonly`, `invoices/template.readonly`
+- `products.readonly`, `products/prices.readonly`
+- `payments/orders.readonly`, `payments/transactions.readonly`, `payments/subscriptions.readonly`
+- `store/setting.readonly`, `store/shipping.readonly`
+- `blogs.readonly`, `medias.readonly`
+- `objects.readonly`, `objects/schema.readonly`, `associations.readonly`, `customFields.readonly`
+
+**Write-side (only if you'll use any `*-updater` router):**
+- `contacts.write`, `contacts.notes.write`
+- `calendars.write`, `calendars.events.write`
+- `conversations.write`, `conversations.messages.write`
+- `opportunities.write`
+- `workflows.write`
+- `emails.builder.write`, `emails/schedule.write`
+- `invoices.write`, `products.write`, `products/prices.write`
+- `blogs.write`, `medias.write`
+- `objects.write`, `objects/schema.write`, `associations.write`, `customFields.write`
+- `locations/customFields.write`, `locations/tags.write`
+
+**Diagnostics:** if any call returns `401 Invalid JWT` or a `[upstream X] 401` envelope, run `ghl-toolkit-help { operation: "token-status" }` — it decodes the bearer (if it's a JWT), surfaces `iat`/`exp`/scopes, and runs a live `GET /locations/{id}` to confirm whether the token authenticates *right now*. The MCP does NOT auto-refresh tokens (PITs are static; OAuth refresh isn't wired) — rotate the PIT in GHL and restart when the diagnostic confirms 401/expired.
+
+### Known surface gaps (not bugs in this MCP)
+
+| Surface | Status | Reason |
+|---------|--------|--------|
+| `ghl-workflow-reader` analytics (sends/opens/clicks) | Not exposed | GHL's public v2 API does not document a `/workflows/{id}/stats` endpoint. The `list` op surfaces id/name/status/version only. To correlate workflow → email engagement, query `ghl-email-reader.get-campaigns` (which includes recipient/open/click counts on the campaign record) and join by workflow source on the campaign side. |
+| `ghl-social-reader.get-accounts` returning 0 | Token scope | Endpoint and routing are correct (`/social-media-posting/{locationId}/accounts`). When the response is empty even though the GHL UI shows connected channels, the PIT is missing `socialplanner/account.readonly`. Re-issue with that scope checked. `token-status` will confirm. |
+| Forms write ops | Not wrapped | GHL's public v2 API has no `POST /forms/`, `PUT /forms/{id}`, or `DELETE /forms/{id}` endpoints. Forms are GHL-UI-only on the write side; the reader exposes the read paths (`list`, `list-submissions`) GHL does publish. |
+| Object `get-schema` for `business` | Use system path | The Company schema's key is `business` but is `SYSTEM_DEFINED` and not exposed via `/objects/{key}` — use `ghl-object-reader.list` to enumerate all schemas including `business`. |
+
 ---
 
 ## Wire into Claude Desktop
@@ -76,7 +120,7 @@ Append to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-Comment out the existing `ghl-mcp` block so the host loads only this server. Restart Claude Desktop. Verify **35 tools** appear in connector permissions UI (1 help tool + 34 facade routers across 18 categories).
+Comment out the existing `ghl-mcp` block so the host loads only this server. Restart Claude Desktop. Verify **36 tools** appear in connector permissions UI (1 help tool + 35 facade routers across 19 categories — adds `ghl-forms-reader` for forms, separate from surveys).
 
 **Rollback:** revert that one block in `claude_desktop_config.json` and restart Claude Desktop. Drill is `optional` in `.smorch/project.json` — CEO-approved per `/smo-plan` workflow.
 
@@ -90,6 +134,8 @@ Comment out the existing `ghl-mcp` block so the host loads only this server. Res
 | `npm run probe` | 25-assertion stdio JSON-RPC integration test (live GHL API, read-only) covering all 18 categories + auto-inject regression + agency-block + v2-redirect negative tests. Exit 0 = green. |
 | `npm run probe:write` | **Opt-in** AC-6.4 round-trip: creates a real GHL contact → gets it back → deletes it. NOT in CI default — mutates upstream state. |
 | `npm run docs:mapping` | Regenerates the operation mapping doc on its own. |
+| `npm run audit:manifest` | **Cross-checks every op in `src/operations.ts` against the upstream's `getToolDefinitions()` schema.** Reports BUG-A (manifest declares param the upstream doesn't have), BUG-B (upstream requires param the manifest doesn't), and WARN (manifest param name not in upstream). Exit 0 = clean (target state). |
+| `npm run sync:required` | **Auto-patches `src/operations.ts` to declare every upstream-required field as `required: true`.** Idempotent. Disambiguates by `upstream: "<exact-name>"` inside each block, so same-named ops in different categories don't cross-contaminate. Skips fields with upstream-declared defaults (those are effectively optional). Run after upstream version bumps; commit the diff. |
 | `npm run lint` | `tsc -p tsconfig.scripts.json` — type-checks `src/` + `scripts/` (no emit). |
 | `npm run start` | `node dist/server.js` — boots the MCP server over stdio. |
 

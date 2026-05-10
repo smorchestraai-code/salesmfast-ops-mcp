@@ -29,6 +29,13 @@ const SOCIAL_UPDATER_DESCRIPTION =
   'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
   'params: { router: "ghl-social-updater", operation: "<name>" } }` for the full schema.';
 
+// v1.1.4 — the per-platform sentinels in operations.ts (e.g.
+// `get_platform_accounts_PLATFORM_google`) all dispatch through the upstream's
+// single `get_platform_accounts` tool with `platform` as a discriminator.
+// Earlier manifest had upstream names like `google`/`facebook` which DON'T
+// EXIST in the upstream switch — every per-platform call always failed.
+const PLATFORM_SENTINEL = /^get_platform_accounts_PLATFORM_(.+)$/;
+
 export function createSocialReader(
   upstream: Upstream,
   deniedOps: readonly string[],
@@ -39,7 +46,17 @@ export function createSocialReader(
     category: "social-media",
     ops: operations["social-media"].reader,
     deniedOps,
-    dispatch: (op, params) => upstream.socialMediaTools.executeTool(op, params),
+    dispatch: (op, params) => {
+      const m = PLATFORM_SENTINEL.exec(op);
+      if (m) {
+        const platform = m[1];
+        return upstream.socialMediaTools.executeTool("get_platform_accounts", {
+          ...params,
+          platform,
+        });
+      }
+      return upstream.socialMediaTools.executeTool(op, params);
+    },
   });
 }
 
