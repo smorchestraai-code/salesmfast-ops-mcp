@@ -1,7 +1,7 @@
 {
   "name": "salesmfast-ops-mcp",
-  "version": "1.1.3",
-  "description": "Facade-router MCP server: GoHighLevel 280-tool upstream surface exposed as 35 category-level routers across 18 categories.",
+  "version": "1.1.4",
+  "description": "Facade-router MCP server: GoHighLevel 280-tool upstream surface exposed as 36 category-level routers across 19 categories.",
   "type": "module",
   "main": "dist/server.js",
   "bin": {
@@ -18,6 +18,8 @@
     "probe": "tsx scripts/probe.ts",
     "probe:write": "tsx scripts/probe-write.ts",
     "docs:mapping": "tsx scripts/gen-mapping-doc.ts",
+    "audit:manifest": "tsx scripts/audit-manifest.ts",
+    "sync:required": "tsx scripts/sync-required-from-upstream.ts",
     "lint": "tsc -p tsconfig.scripts.json",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\""
   },

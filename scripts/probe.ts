@@ -170,6 +170,23 @@ const CATEGORY_PROBES: readonly CategoryProbe[] = [
     },
   },
   {
+    category: "forms",
+    // v1.1.4 — forms reader added to close the audit gap (forms were
+    // entirely absent from the upstream's tool surface). No updater because
+    // GHL's public v2 API has no forms write endpoints.
+    expectedRouters: ["ghl-forms-reader"],
+    liveRead: {
+      router: "ghl-forms-reader",
+      operation: "list",
+      // GHL's /forms response always nests results under a `forms` array,
+      // even when empty — same envelope shape regardless of count. Asserting
+      // the envelope key proves the direct-axios dispatch path returns a
+      // structurally-correct response.
+      expectFragment: '"forms"',
+      label: `ghl-forms-reader list returns "forms" envelope`,
+    },
+  },
+  {
     category: "invoice",
     expectedRouters: ["ghl-invoice-reader", "ghl-invoice-updater"],
     liveRead: {

@@ -32,6 +32,7 @@ import { createWorkflowReader } from "./workflow.js";
 import { createSocialReader, createSocialUpdater } from "./social.js";
 import { createEmailReader, createEmailUpdater } from "./email.js";
 import { createSurveyReader } from "./survey.js";
+import { createFormsReader } from "./forms.js";
 import { createInvoiceReader, createInvoiceUpdater } from "./invoice.js";
 // ─── Slice 8 (Revenue) ───
 import { createProductsReader, createProductsUpdater } from "./products.js";
@@ -160,6 +161,13 @@ export function buildRouters(
     routers.push(createSurveyReader(upstream, env.deniedOps, env));
   }
 
+  if (
+    activeCategories.includes("forms") &&
+    Object.keys(operations.forms.reader).length > 0
+  ) {
+    routers.push(createFormsReader(upstream, env.deniedOps, env));
+  }
+
   if (activeCategories.includes("invoice")) {
     if (Object.keys(operations.invoice.reader).length > 0) {
       routers.push(createInvoiceReader(upstream, env.deniedOps));
@@ -244,8 +252,10 @@ export function buildRouters(
     }
   }
 
-  // Help is always registered, even if no other category is active
-  routers.push(createHelp(activeCategories));
+  // Help is always registered, even if no other category is active.
+  // Threads env + upstream so the v1.1.4 `token-status` diagnostic can run
+  // a live verify call and decode the bearer token.
+  routers.push(createHelp(activeCategories, env, upstream));
 
   // Stable, predictable ordering: help first, then alphabetical
   routers.sort((a, b) => {

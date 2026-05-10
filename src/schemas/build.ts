@@ -151,6 +151,14 @@ export function buildHelpSchema(
               },
             },
           },
+          {
+            type: "object",
+            required: ["operation"],
+            additionalProperties: false,
+            properties: {
+              operation: { const: "token-status" },
+            },
+          },
         ],
       },
     },

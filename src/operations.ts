@@ -51,6 +51,7 @@ export const ALL_CATEGORIES = [
   "email",
   "social-media",
   "survey",
+  "forms",
   "invoice",
   // ─── Slice 8 (Revenue) ────
   "products",
@@ -162,7 +163,13 @@ export const operations: Manifest = {
         upstream: "create_contact",
         description:
           "Create a new contact. Many optional fields supported (firstName, lastName, email, phone, tags, customFields, etc.) — see GHL API docs.",
-        params: [],
+        params: [
+          {
+            name: "email",
+            type: "string",
+            required: true,
+            description: "Contact email address",
+          },],
         additionalProperties: true,
       },
       update: {
@@ -198,6 +205,12 @@ export const operations: Manifest = {
         description:
           "Create a task on a contact. Title required; optional body, dueDate, completed, assignedTo.",
         params: [
+          {
+            name: "dueDate",
+            type: "string",
+            required: true,
+            description: "Due date (ISO format)",
+          },
           REQ_CONTACT_ID,
           {
             name: "title",
@@ -329,25 +342,66 @@ export const operations: Manifest = {
       "add-followers": {
         upstream: "add_contact_followers",
         description: "Add follower users to a contact.",
-        params: [REQ_CONTACT_ID],
+        params: [
+          {
+            name: "followers",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of user IDs to add as followers",
+          },REQ_CONTACT_ID],
         additionalProperties: true,
       },
       "remove-followers": {
         upstream: "remove_contact_followers",
         description: "Remove follower users from a contact.",
-        params: [REQ_CONTACT_ID],
+        params: [
+          {
+            name: "followers",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of user IDs to remove as followers",
+          },REQ_CONTACT_ID],
         additionalProperties: true,
       },
       "bulk-update-business": {
         upstream: "bulk_update_contact_business",
         description: "Bulk-update the business on multiple contacts.",
-        params: [],
+        params: [
+          {
+            name: "contactIds",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of contact IDs",
+          },],
         additionalProperties: true,
       },
       "bulk-update-tags": {
         upstream: "bulk_update_contact_tags",
         description: "Bulk add or remove tags on multiple contacts.",
-        params: [],
+        params: [
+          {
+            name: "contactIds",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of contact IDs",
+          },
+          {
+            name: "tags",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Tags to add or remove",
+          },
+          {
+            name: "operation",
+            type: "string",
+            required: true,
+            description: "Operation to perform",
+          },],
         additionalProperties: true,
       },
     },
@@ -401,15 +455,25 @@ export const operations: Manifest = {
       },
       "get-recent-messages": {
         upstream: "get_recent_messages",
-        description: "List recent messages in a conversation.",
+        description:
+          "List recent messages ACROSS conversations for the location (monitoring view, NOT scoped to a single conversation). Use `get { conversationId }` to fetch one conversation's full thread.",
         params: [
           {
-            name: "conversationId",
+            name: "limit",
+            type: "number",
+            required: false,
+            default: 10,
+            description:
+              "Maximum number of conversations to scan (1–50, default 10).",
+          },
+          {
+            name: "status",
             type: "string",
-            required: true,
-            description: "Conversation id.",
+            required: false,
+            description: 'Filter — "all" or "unread".',
           },
         ],
+        additionalProperties: true,
       },
       "get-message-recording": {
         upstream: "get_message_recording",
@@ -478,6 +542,12 @@ export const operations: Manifest = {
           "Send an email to a contact. Required: contactId. Subject/body/html/template variants supported via optional fields.",
         params: [
           {
+            name: "subject",
+            type: "string",
+            required: true,
+            description: "Email subject line",
+          },
+          {
             name: "contactId",
             type: "string",
             required: true,
@@ -528,6 +598,13 @@ export const operations: Manifest = {
         upstream: "upload_message_attachments",
         description: "Upload attachments to a conversation.",
         params: [
+          {
+            name: "attachmentUrls",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of file URLs to upload as attachments",
+          },
           {
             name: "conversationId",
             type: "string",
@@ -584,19 +661,85 @@ export const operations: Manifest = {
       "add-inbound-message": {
         upstream: "add_inbound_message",
         description: "Manually log an inbound message in a conversation.",
-        params: [],
+        params: [
+          {
+            name: "type",
+            type: "string",
+            required: true,
+            description: "Type of inbound message to add",
+          },
+          {
+            name: "conversationId",
+            type: "string",
+            required: true,
+            description: "The conversation to add the message to",
+          },
+          {
+            name: "conversationProviderId",
+            type: "string",
+            required: true,
+            description: "Conversation provider ID for the message",
+          },],
         additionalProperties: true,
       },
       "add-outbound-call": {
         upstream: "add_outbound_call",
         description: "Manually log an outbound call in a conversation.",
-        params: [],
+        params: [
+          {
+            name: "conversationId",
+            type: "string",
+            required: true,
+            description: "The conversation to add the call to",
+          },
+          {
+            name: "conversationProviderId",
+            type: "string",
+            required: true,
+            description: "Conversation provider ID for the call",
+          },
+          {
+            name: "to",
+            type: "string",
+            required: true,
+            description: "Called phone number",
+          },
+          {
+            name: "from",
+            type: "string",
+            required: true,
+            description: "Caller phone number",
+          },
+          {
+            name: "status",
+            type: "string",
+            required: true,
+            description: "Call completion status",
+          },],
         additionalProperties: true,
       },
       "live-chat-typing": {
         upstream: "live_chat_typing",
         description: "Send a typing indicator in a live-chat conversation.",
-        params: [],
+        params: [
+          {
+            name: "visitorId",
+            type: "string",
+            required: true,
+            description: "Unique visitor ID for the live chat session",
+          },
+          {
+            name: "conversationId",
+            type: "string",
+            required: true,
+            description: "The conversation ID for the live chat",
+          },
+          {
+            name: "isTyping",
+            type: "boolean",
+            required: true,
+            description: "Whether the agent is currently typing",
+          },],
         additionalProperties: true,
       },
     },
@@ -643,25 +786,40 @@ export const operations: Manifest = {
       },
       "list-events": {
         upstream: "get_calendar_events",
-        description: "List events for a calendar in a date range.",
+        description:
+          "List events/appointments for a calendar in a date range. Date params accept ISO date (YYYY-MM-DD), full ISO 8601, or epoch milliseconds — upstream converts.",
         params: [
+          {
+            name: "startTime",
+            type: "string",
+            required: true,
+            description:
+              "Start of date range — ISO date (YYYY-MM-DD), ISO 8601 timestamp, or epoch milliseconds.",
+          },
+          {
+            name: "endTime",
+            type: "string",
+            required: true,
+            description:
+              "End of date range — ISO date (YYYY-MM-DD), ISO 8601 timestamp, or epoch milliseconds.",
+          },
           {
             name: "calendarId",
             type: "string",
-            required: true,
-            description: "Calendar id.",
+            required: false,
+            description: "Filter to a single calendar.",
           },
           {
-            name: "startDate",
+            name: "userId",
             type: "string",
-            required: true,
-            description: "ISO 8601 start date.",
+            required: false,
+            description: "Filter to events assigned to a specific user.",
           },
           {
-            name: "endDate",
+            name: "groupId",
             type: "string",
-            required: true,
-            description: "ISO 8601 end date.",
+            required: false,
+            description: "Filter to a calendar group.",
           },
         ],
       },
@@ -711,13 +869,31 @@ export const operations: Manifest = {
       "get-blocked-slots": {
         upstream: "get_blocked_slots",
         description: "List blocked-time slots on a calendar.",
-        params: [],
+        params: [
+          {
+            name: "startTime",
+            type: "string",
+            required: true,
+            description: "Start time for the query range",
+          },
+          {
+            name: "endTime",
+            type: "string",
+            required: true,
+            description: "End time for the query range",
+          },],
         additionalProperties: true,
       },
       "list-appointment-notes": {
         upstream: "get_appointment_notes",
         description: "List notes attached to an appointment.",
-        params: [],
+        params: [
+          {
+            name: "appointmentId",
+            type: "string",
+            required: true,
+            description: "Appointment ID",
+          },],
         additionalProperties: true,
       },
       "list-resources-rooms": {
@@ -729,7 +905,13 @@ export const operations: Manifest = {
       "get-resource-room": {
         upstream: "get_calendar_resource_room",
         description: "Get a single room resource by id.",
-        params: [],
+        params: [
+          {
+            name: "resourceId",
+            type: "string",
+            required: true,
+            description: "Room resource ID",
+          },],
         additionalProperties: true,
       },
       "list-resources-equipment": {
@@ -741,19 +923,43 @@ export const operations: Manifest = {
       "get-resource-equipment": {
         upstream: "get_calendar_resource_equipment",
         description: "Get a single equipment resource by id.",
-        params: [],
+        params: [
+          {
+            name: "resourceId",
+            type: "string",
+            required: true,
+            description: "Equipment resource ID",
+          },],
         additionalProperties: true,
       },
       "list-notifications": {
         upstream: "get_calendar_notifications",
         description: "List notification rules defined for a calendar.",
-        params: [],
+        params: [
+          {
+            name: "calendarId",
+            type: "string",
+            required: true,
+            description: "Calendar ID",
+          },],
         additionalProperties: true,
       },
       "get-notification": {
         upstream: "get_calendar_notification",
         description: "Get a single calendar notification rule by id.",
-        params: [],
+        params: [
+          {
+            name: "calendarId",
+            type: "string",
+            required: true,
+            description: "Calendar ID",
+          },
+          {
+            name: "notificationId",
+            type: "string",
+            required: true,
+            description: "Notification ID",
+          },],
         additionalProperties: true,
       },
     },
@@ -762,7 +968,13 @@ export const operations: Manifest = {
         upstream: "create_calendar",
         description:
           "Create a new calendar in a calendar group. Required: groupId + name (typically) — see GHL API docs.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the calendar",
+          },],
         additionalProperties: true,
       },
       update: {
@@ -794,6 +1006,18 @@ export const operations: Manifest = {
         upstream: "create_appointment",
         description: "Create an appointment on a calendar.",
         params: [
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "The contact ID for whom to book the appointment",
+          },
+          {
+            name: "startTime",
+            type: "string",
+            required: true,
+            description: "Start time in ISO format (e.g., \"2024-01-15T10:00:00-05:00\")",
+          },
           {
             name: "calendarId",
             type: "string",
@@ -832,115 +1056,376 @@ export const operations: Manifest = {
       "create-block-slot": {
         upstream: "create_block_slot",
         description: "Create a blocked-time slot on a calendar.",
-        params: [],
+        params: [
+          {
+            name: "startTime",
+            type: "string",
+            required: true,
+            description: "Start time of the block in ISO format (e.g., \"2024-01-15T10:00:00-05:00\")",
+          },
+          {
+            name: "endTime",
+            type: "string",
+            required: true,
+            description: "End time of the block in ISO format (e.g., \"2024-01-15T12:00:00-05:00\")",
+          },],
         additionalProperties: true,
       },
       "update-block-slot": {
         upstream: "update_block_slot",
         description: "Update a blocked-time slot.",
-        params: [],
+        params: [
+          {
+            name: "blockSlotId",
+            type: "string",
+            required: true,
+            description: "The unique ID of the block slot to update",
+          },],
         additionalProperties: true,
       },
       "create-group": {
         upstream: "create_calendar_group",
         description: "Create a new calendar group.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Group name",
+          },
+          {
+            name: "description",
+            type: "string",
+            required: true,
+            description: "Group description",
+          },
+          {
+            name: "slug",
+            type: "string",
+            required: true,
+            description: "URL slug for the group",
+          },],
         additionalProperties: true,
       },
       "update-group": {
         upstream: "update_calendar_group",
         description: "Update an existing calendar group.",
-        params: [],
+        params: [
+          {
+            name: "groupId",
+            type: "string",
+            required: true,
+            description: "Calendar group ID",
+          },
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Group name",
+          },
+          {
+            name: "description",
+            type: "string",
+            required: true,
+            description: "Group description",
+          },
+          {
+            name: "slug",
+            type: "string",
+            required: true,
+            description: "URL slug for the group",
+          },],
         additionalProperties: true,
       },
       "delete-group": {
         upstream: "delete_calendar_group",
         description: "Delete a calendar group.",
-        params: [],
+        params: [
+          {
+            name: "groupId",
+            type: "string",
+            required: true,
+            description: "Calendar group ID",
+          },],
         additionalProperties: true,
       },
       "disable-group": {
         upstream: "disable_calendar_group",
         description: "Disable a calendar group (without deleting).",
-        params: [],
+        params: [
+          {
+            name: "groupId",
+            type: "string",
+            required: true,
+            description: "Calendar group ID",
+          },
+          {
+            name: "isActive",
+            type: "boolean",
+            required: true,
+            description: "Whether to enable (true) or disable (false) the group",
+          },],
         additionalProperties: true,
       },
       "validate-group-slug": {
         upstream: "validate_group_slug",
         description: "Validate a calendar-group URL slug for availability.",
-        params: [],
+        params: [
+          {
+            name: "slug",
+            type: "string",
+            required: true,
+            description: "Slug to validate",
+          },],
         additionalProperties: true,
       },
       "create-appointment-note": {
         upstream: "create_appointment_note",
         description: "Create a note on an appointment.",
-        params: [],
+        params: [
+          {
+            name: "appointmentId",
+            type: "string",
+            required: true,
+            description: "Appointment ID",
+          },
+          {
+            name: "body",
+            type: "string",
+            required: true,
+            description: "Note content",
+          },],
         additionalProperties: true,
       },
       "update-appointment-note": {
         upstream: "update_appointment_note",
         description: "Update an existing appointment note.",
-        params: [],
+        params: [
+          {
+            name: "appointmentId",
+            type: "string",
+            required: true,
+            description: "Appointment ID",
+          },
+          {
+            name: "noteId",
+            type: "string",
+            required: true,
+            description: "Note ID",
+          },
+          {
+            name: "body",
+            type: "string",
+            required: true,
+            description: "Updated note content",
+          },],
         additionalProperties: true,
       },
       "delete-appointment-note": {
         upstream: "delete_appointment_note",
         description: "Delete an appointment note.",
-        params: [],
+        params: [
+          {
+            name: "appointmentId",
+            type: "string",
+            required: true,
+            description: "Appointment ID",
+          },
+          {
+            name: "noteId",
+            type: "string",
+            required: true,
+            description: "Note ID",
+          },],
         additionalProperties: true,
       },
       "create-resource-room": {
         upstream: "create_calendar_resource_room",
         description: "Create a room resource for calendar bookings.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Room name",
+          },
+          {
+            name: "description",
+            type: "string",
+            required: true,
+            description: "Room description",
+          },
+          {
+            name: "quantity",
+            type: "number",
+            required: true,
+            description: "Total quantity available",
+          },
+          {
+            name: "outOfService",
+            type: "number",
+            required: true,
+            description: "Number currently out of service",
+          },
+          {
+            name: "capacity",
+            type: "number",
+            required: true,
+            description: "Room capacity",
+          },
+          {
+            name: "calendarIds",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Associated calendar IDs",
+          },],
         additionalProperties: true,
       },
       "update-resource-room": {
         upstream: "update_calendar_resource_room",
         description: "Update a room resource.",
-        params: [],
+        params: [
+          {
+            name: "resourceId",
+            type: "string",
+            required: true,
+            description: "Room resource ID",
+          },],
         additionalProperties: true,
       },
       "delete-resource-room": {
         upstream: "delete_calendar_resource_room",
         description: "Delete a room resource.",
-        params: [],
+        params: [
+          {
+            name: "resourceId",
+            type: "string",
+            required: true,
+            description: "Room resource ID",
+          },],
         additionalProperties: true,
       },
       "create-resource-equipment": {
         upstream: "create_calendar_resource_equipment",
         description: "Create an equipment resource for calendar bookings.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Equipment name",
+          },
+          {
+            name: "description",
+            type: "string",
+            required: true,
+            description: "Equipment description",
+          },
+          {
+            name: "quantity",
+            type: "number",
+            required: true,
+            description: "Total quantity available",
+          },
+          {
+            name: "outOfService",
+            type: "number",
+            required: true,
+            description: "Number currently out of service",
+          },
+          {
+            name: "capacity",
+            type: "number",
+            required: true,
+            description: "Capacity per unit",
+          },
+          {
+            name: "calendarIds",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Associated calendar IDs",
+          },],
         additionalProperties: true,
       },
       "update-resource-equipment": {
         upstream: "update_calendar_resource_equipment",
         description: "Update an equipment resource.",
-        params: [],
+        params: [
+          {
+            name: "resourceId",
+            type: "string",
+            required: true,
+            description: "Equipment resource ID",
+          },],
         additionalProperties: true,
       },
       "delete-resource-equipment": {
         upstream: "delete_calendar_resource_equipment",
         description: "Delete an equipment resource.",
-        params: [],
+        params: [
+          {
+            name: "resourceId",
+            type: "string",
+            required: true,
+            description: "Equipment resource ID",
+          },],
         additionalProperties: true,
       },
       "create-notification": {
         upstream: "create_calendar_notifications",
         description: "Create a calendar notification rule.",
-        params: [],
+        params: [
+          {
+            name: "calendarId",
+            type: "string",
+            required: true,
+            description: "Calendar ID",
+          },
+          {
+            name: "notifications",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of notification configurations",
+          },],
         additionalProperties: true,
       },
       "update-notification": {
         upstream: "update_calendar_notification",
         description: "Update a calendar notification rule.",
-        params: [],
+        params: [
+          {
+            name: "calendarId",
+            type: "string",
+            required: true,
+            description: "Calendar ID",
+          },
+          {
+            name: "notificationId",
+            type: "string",
+            required: true,
+            description: "Notification ID",
+          },],
         additionalProperties: true,
       },
       "delete-notification": {
         upstream: "delete_calendar_notification",
         description: "Delete a calendar notification rule.",
-        params: [],
+        params: [
+          {
+            name: "calendarId",
+            type: "string",
+            required: true,
+            description: "Calendar ID",
+          },
+          {
+            name: "notificationId",
+            type: "string",
+            required: true,
+            description: "Notification ID",
+          },],
         additionalProperties: true,
       },
     },
@@ -978,7 +1463,25 @@ export const operations: Manifest = {
         upstream: "create_opportunity",
         description:
           "Create a new opportunity in a pipeline stage. Required: pipelineId + name (typically) — see GHL API docs.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name/title of the opportunity",
+          },
+          {
+            name: "pipelineId",
+            type: "string",
+            required: true,
+            description: "ID of the pipeline this opportunity belongs to",
+          },
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "ID of the contact associated with this opportunity",
+          },],
         additionalProperties: true,
       },
       update: {
@@ -1017,7 +1520,19 @@ export const operations: Manifest = {
         upstream: "upsert_opportunity",
         description:
           "Create-or-update an opportunity, matching by external id or fields.",
-        params: [],
+        params: [
+          {
+            name: "pipelineId",
+            type: "string",
+            required: true,
+            description: "ID of the pipeline this opportunity belongs to",
+          },
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "ID of the contact associated with this opportunity",
+          },],
         additionalProperties: true,
       },
       delete: {
@@ -1038,6 +1553,13 @@ export const operations: Manifest = {
         description: "Add follower users to an opportunity.",
         params: [
           {
+            name: "followers",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of user IDs to add as followers",
+          },
+          {
             name: "opportunityId",
             type: "string",
             required: true,
@@ -1050,6 +1572,13 @@ export const operations: Manifest = {
         upstream: "remove_opportunity_followers",
         description: "Remove follower users from an opportunity.",
         params: [
+          {
+            name: "followers",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of user IDs to remove as followers",
+          },
           {
             name: "opportunityId",
             type: "string",
@@ -1145,7 +1674,13 @@ export const operations: Manifest = {
         upstream: "get_location_templates",
         description:
           "List message / SMS / email templates defined for the location. Pass `locationId` in params.",
-        params: [],
+        params: [
+          {
+            name: "originId",
+            type: "string",
+            required: true,
+            description: "Origin ID (required parameter)",
+          },],
         additionalProperties: true,
       },
       "list-timezones": {
@@ -1175,6 +1710,12 @@ export const operations: Manifest = {
         description: "Update an existing location tag (rename, etc.).",
         params: [
           {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Updated name for the tag",
+          },
+          {
             name: "tagId",
             type: "string",
             required: true,
@@ -1199,7 +1740,13 @@ export const operations: Manifest = {
       create: {
         upstream: "create_location",
         description: "Create a new sub-account location (agency-level only).",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the sub-account/location",
+          },],
         additionalProperties: true,
       },
       update: {
@@ -1217,44 +1764,116 @@ export const operations: Manifest = {
       "create-custom-field": {
         upstream: "create_location_custom_field",
         description: "Create a new custom field on the location.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the custom field",
+          },
+          {
+            name: "dataType",
+            type: "string",
+            required: true,
+            description: "Data type of the field (TEXT, NUMBER, DATE, etc.)",
+          },],
         additionalProperties: true,
       },
       "update-custom-field": {
         upstream: "update_location_custom_field",
         description: "Update an existing location custom field.",
-        params: [],
+        params: [
+          {
+            name: "customFieldId",
+            type: "string",
+            required: true,
+            description: "The custom field ID to update",
+          },
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Updated name of the custom field",
+          },],
         additionalProperties: true,
       },
       "delete-custom-field": {
         upstream: "delete_location_custom_field",
         description: "Delete a location custom field.",
-        params: [],
+        params: [
+          {
+            name: "customFieldId",
+            type: "string",
+            required: true,
+            description: "The custom field ID to delete",
+          },],
         additionalProperties: true,
       },
       "create-custom-value": {
         upstream: "create_location_custom_value",
         description: "Create a new custom value on the location.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the custom value field",
+          },
+          {
+            name: "value",
+            type: "string",
+            required: true,
+            description: "Value to assign",
+          },],
         additionalProperties: true,
       },
       "update-custom-value": {
         upstream: "update_location_custom_value",
         description: "Update an existing location custom value.",
-        params: [],
+        params: [
+          {
+            name: "customValueId",
+            type: "string",
+            required: true,
+            description: "The custom value ID to update",
+          },
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Updated name",
+          },
+          {
+            name: "value",
+            type: "string",
+            required: true,
+            description: "Updated value",
+          },],
         additionalProperties: true,
       },
       "delete-custom-value": {
         upstream: "delete_location_custom_value",
         description: "Delete a location custom value.",
-        params: [],
+        params: [
+          {
+            name: "customValueId",
+            type: "string",
+            required: true,
+            description: "The custom value ID to delete",
+          },],
         additionalProperties: true,
       },
       "delete-template": {
         upstream: "delete_location_template",
         description:
           "Delete a message / SMS / email template from the location.",
-        params: [],
+        params: [
+          {
+            name: "templateId",
+            type: "string",
+            required: true,
+            description: "The template ID to delete",
+          },],
         additionalProperties: true,
       },
     },
@@ -1291,13 +1910,31 @@ export const operations: Manifest = {
       "create-template": {
         upstream: "create_email_template",
         description: "Create a new email template.",
-        params: [],
+        params: [
+          {
+            name: "title",
+            type: "string",
+            required: true,
+            description: "Title of the new template.",
+          },
+          {
+            name: "html",
+            type: "string",
+            required: true,
+            description: "HTML content of the template.",
+          },],
         additionalProperties: true,
       },
       "update-template": {
         upstream: "update_email_template",
         description: "Update an existing email template.",
         params: [
+          {
+            name: "html",
+            type: "string",
+            required: true,
+            description: "The updated HTML content of the template.",
+          },
           {
             name: "templateId",
             type: "string",
@@ -1322,13 +1959,20 @@ export const operations: Manifest = {
       "verify-email": {
         upstream: "verify_email",
         description:
-          "Verify an email address via GHL Email ISV (deliverability check). NOTE: routed through EmailISVTools, not EmailTools — handled at dispatch closure.",
+          'Verify an email address (or contact) via GHL Email ISV — deliverability check that DEDUCTS CHARGES from the location wallet. Pass `type: "email"` + `verify: "<email-address>"` to verify by literal email, or `type: "contact"` + `verify: "<contactId>"` to verify by contact id. Routed through EmailISVTools (not EmailTools) at dispatch.',
         params: [
           {
-            name: "email",
+            name: "type",
             type: "string",
             required: true,
-            description: "Email address to verify.",
+            description: 'Verification mode — "email" or "contact".',
+          },
+          {
+            name: "verify",
+            type: "string",
+            required: true,
+            description:
+              'Value to verify — literal email address when type="email", or contactId when type="contact".',
           },
         ],
         additionalProperties: true,
@@ -1347,7 +1991,19 @@ export const operations: Manifest = {
       "get-platform-accounts": {
         upstream: "get_platform_accounts",
         description: "List per-platform OAuth accounts for the location.",
-        params: [],
+        params: [
+          {
+            name: "platform",
+            type: "string",
+            required: true,
+            description: "Social media platform",
+          },
+          {
+            name: "accountId",
+            type: "string",
+            required: true,
+            description: "OAuth account ID",
+          },],
         additionalProperties: true,
       },
       "get-post": {
@@ -1366,7 +2022,19 @@ export const operations: Manifest = {
         upstream: "search_social_posts",
         description:
           "Search/list social posts. Optional filters by platform, status, date.",
-        params: [],
+        params: [
+          {
+            name: "fromDate",
+            type: "string",
+            required: true,
+            description: "Start date (ISO format)",
+          },
+          {
+            name: "toDate",
+            type: "string",
+            required: true,
+            description: "End date (ISO format)",
+          },],
         additionalProperties: true,
       },
       "get-tags": {
@@ -1377,7 +2045,14 @@ export const operations: Manifest = {
       "get-tags-by-ids": {
         upstream: "get_social_tags_by_ids",
         description: "Look up multiple social-post tags by id.",
-        params: [],
+        params: [
+          {
+            name: "tagIds",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of tag IDs",
+          },],
         additionalProperties: true,
       },
       "get-categories": {
@@ -1397,8 +2072,15 @@ export const operations: Manifest = {
           },
         ],
       },
+      // ─── per-platform account lookups ─────────────────────────────────
+      // Sentinels: the upstream has ONE tool `get_platform_accounts` that
+      // dispatches off `params.platform`. The 6 manifest ops below preserve
+      // the per-platform discoverability for operators (so they don't need
+      // to know the discriminator) — the social router rewrites these
+      // sentinel upstream names to `get_platform_accounts` + injects the
+      // platform string before dispatch. See routers/social.ts.
       "get-google-locations": {
-        upstream: "google",
+        upstream: "get_platform_accounts_PLATFORM_google",
         description:
           "List Google Business Profile locations for an OAuth account.",
         params: [
@@ -1411,7 +2093,7 @@ export const operations: Manifest = {
         ],
       },
       "get-facebook-pages": {
-        upstream: "facebook",
+        upstream: "get_platform_accounts_PLATFORM_facebook",
         description: "List Facebook pages for an OAuth account.",
         params: [
           {
@@ -1423,7 +2105,7 @@ export const operations: Manifest = {
         ],
       },
       "get-instagram-accounts": {
-        upstream: "instagram",
+        upstream: "get_platform_accounts_PLATFORM_instagram",
         description: "List Instagram accounts for an OAuth connection.",
         params: [
           {
@@ -1435,7 +2117,7 @@ export const operations: Manifest = {
         ],
       },
       "get-linkedin-accounts": {
-        upstream: "linkedin",
+        upstream: "get_platform_accounts_PLATFORM_linkedin",
         description:
           "List LinkedIn accounts (personal + pages) for an OAuth connection.",
         params: [
@@ -1448,7 +2130,7 @@ export const operations: Manifest = {
         ],
       },
       "get-twitter-profile": {
-        upstream: "twitter",
+        upstream: "get_platform_accounts_PLATFORM_twitter",
         description: "Get the Twitter/X profile for an OAuth connection.",
         params: [
           {
@@ -1460,7 +2142,7 @@ export const operations: Manifest = {
         ],
       },
       "get-tiktok-profile": {
-        upstream: "tiktok",
+        upstream: "get_platform_accounts_PLATFORM_tiktok",
         description: "Get the TikTok profile for an OAuth connection.",
         params: [
           {
@@ -1477,7 +2159,26 @@ export const operations: Manifest = {
         upstream: "create_social_post",
         description:
           "Create a social media post (single or multi-platform). Required: account-and-content fields per GHL API.",
-        params: [],
+        params: [
+          {
+            name: "accountIds",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of social media account IDs to post to",
+          },
+          {
+            name: "summary",
+            type: "string",
+            required: true,
+            description: "Post content/text",
+          },
+          {
+            name: "type",
+            type: "string",
+            required: true,
+            description: "Type of post",
+          },],
         additionalProperties: true,
       },
       "update-post": {
@@ -1508,7 +2209,14 @@ export const operations: Manifest = {
       "bulk-delete-posts": {
         upstream: "bulk_delete_social_posts",
         description: "Bulk-delete social posts by id list.",
-        params: [],
+        params: [
+          {
+            name: "postIds",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of post IDs to delete",
+          },],
         additionalProperties: true,
       },
       "delete-account": {
@@ -1527,7 +2235,19 @@ export const operations: Manifest = {
       "start-oauth": {
         upstream: "start_social_oauth",
         description: "Start an OAuth flow to connect a new social account.",
-        params: [],
+        params: [
+          {
+            name: "platform",
+            type: "string",
+            required: true,
+            description: "Social media platform",
+          },
+          {
+            name: "userId",
+            type: "string",
+            required: true,
+            description: "User ID initiating OAuth",
+          },],
         additionalProperties: true,
       },
     },
@@ -1546,6 +2266,88 @@ export const operations: Manifest = {
         upstream: "ghl_get_survey_submissions",
         description: "List submissions for a survey/form.",
         params: [],
+        additionalProperties: true,
+      },
+    },
+    updater: {},
+  },
+
+  // ─── forms (v1.1.4) ──────────────────────────────────────────────────
+  // Upstream's SurveyTools wraps surveys only — GHL forms (Pre-Call
+  // Qualifier, Newsletter, scorecard intake, etc.) are a separate v2
+  // endpoint and not in upstream's tool surface. We dispatch via direct
+  // axios on `upstream.client.axiosInstance` (same escape hatch the
+  // contacts.search and survey.list-submissions routers use).
+  //
+  // GHL public API exposes only two read endpoints for forms:
+  //   GET /forms/?locationId=...&limit=...&skip=...
+  //   GET /forms/submissions?locationId=...&formId=...&page=...
+  // There is NO /forms/{formId} get-by-id endpoint — form schema is
+  // included in the list response.
+  forms: {
+    reader: {
+      list: {
+        upstream: "ghl_list_forms_DIRECT_AXIOS",
+        description:
+          "List all forms defined for the location (Pre-Call Qualifier, intake forms, scorecards, etc.). Form schema (fields/questions) is included in each form object — there is no separate get-by-id endpoint in GHL's public v2 API.",
+        params: [
+          {
+            name: "limit",
+            type: "number",
+            required: false,
+            description: "Page size (GHL default ~100).",
+          },
+          {
+            name: "skip",
+            type: "number",
+            required: false,
+            description: "Pagination offset.",
+          },
+        ],
+        additionalProperties: true,
+      },
+      "list-submissions": {
+        upstream: "ghl_list_form_submissions_DIRECT_AXIOS",
+        description:
+          "List form submissions, optionally filtered by formId and date range. Each submission includes the contact id and the answers payload.",
+        params: [
+          {
+            name: "formId",
+            type: "string",
+            required: false,
+            description: "Filter to a single form's submissions.",
+          },
+          {
+            name: "page",
+            type: "number",
+            required: false,
+            description: "Page number (1-indexed).",
+          },
+          {
+            name: "limit",
+            type: "number",
+            required: false,
+            description: "Page size.",
+          },
+          {
+            name: "q",
+            type: "string",
+            required: false,
+            description: "Free-text search across submissions.",
+          },
+          {
+            name: "startAt",
+            type: "string",
+            required: false,
+            description: "ISO date — earliest submission to include.",
+          },
+          {
+            name: "endAt",
+            type: "string",
+            required: false,
+            description: "ISO date — latest submission to include.",
+          },
+        ],
         additionalProperties: true,
       },
     },
@@ -1622,7 +2424,19 @@ export const operations: Manifest = {
       create: {
         upstream: "create_invoice",
         description: "Create a new invoice.",
-        params: [],
+        params: [
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "Contact ID",
+          },
+          {
+            name: "title",
+            type: "string",
+            required: true,
+            description: "Invoice title",
+          },],
         additionalProperties: true,
       },
       "send-invoice": {
@@ -1641,7 +2455,19 @@ export const operations: Manifest = {
       "create-estimate": {
         upstream: "create_estimate",
         description: "Create a new estimate.",
-        params: [],
+        params: [
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "Contact ID",
+          },
+          {
+            name: "title",
+            type: "string",
+            required: true,
+            description: "Estimate title",
+          },],
         additionalProperties: true,
       },
       "send-estimate": {
@@ -1673,7 +2499,13 @@ export const operations: Manifest = {
       "create-template": {
         upstream: "create_invoice_template",
         description: "Create a new invoice template.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Template name",
+          },],
         additionalProperties: true,
       },
       "update-template": {
@@ -1704,7 +2536,25 @@ export const operations: Manifest = {
       "create-schedule": {
         upstream: "create_invoice_schedule",
         description: "Create a recurring invoice schedule.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Schedule name",
+          },
+          {
+            name: "templateId",
+            type: "string",
+            required: true,
+            description: "Template ID",
+          },
+          {
+            name: "contactId",
+            type: "string",
+            required: true,
+            description: "Contact ID",
+          },],
         additionalProperties: true,
       },
       "generate-invoice-number": {
@@ -1749,7 +2599,13 @@ export const operations: Manifest = {
       "list-prices": {
         upstream: "ghl_list_prices",
         description: "List prices for a product.",
-        params: [],
+        params: [
+          {
+            name: "productId",
+            type: "string",
+            required: true,
+            description: "Product ID to list prices for",
+          },],
         additionalProperties: true,
       },
       "list-collections": {
@@ -1769,7 +2625,19 @@ export const operations: Manifest = {
       create: {
         upstream: "ghl_create_product",
         description: "Create a new product.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Product name",
+          },
+          {
+            name: "productType",
+            type: "string",
+            required: true,
+            description: "Type of product",
+          },],
         additionalProperties: true,
       },
       update: {
@@ -1800,13 +2668,55 @@ export const operations: Manifest = {
       "create-price": {
         upstream: "ghl_create_price",
         description: "Create a new price (variant/SKU) on a product.",
-        params: [],
+        params: [
+          {
+            name: "productId",
+            type: "string",
+            required: true,
+            description: "Product ID to create price for",
+          },
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Price name/variant name",
+          },
+          {
+            name: "type",
+            type: "string",
+            required: true,
+            description: "Price type",
+          },
+          {
+            name: "currency",
+            type: "string",
+            required: true,
+            description: "Currency code (e.g., USD)",
+          },
+          {
+            name: "amount",
+            type: "number",
+            required: true,
+            description: "Price amount in cents",
+          },],
         additionalProperties: true,
       },
       "create-collection": {
         upstream: "ghl_create_product_collection",
         description: "Create a new product collection.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Collection name",
+          },
+          {
+            name: "slug",
+            type: "string",
+            required: true,
+            description: "Collection URL slug",
+          },],
         additionalProperties: true,
       },
     },
@@ -1836,7 +2746,13 @@ export const operations: Manifest = {
       "list-fulfillments": {
         upstream: "list_order_fulfillments",
         description: "List fulfillment records for an order.",
-        params: [],
+        params: [
+          {
+            name: "orderId",
+            type: "string",
+            required: true,
+            description: "ID of the order",
+          },],
         additionalProperties: true,
       },
       "list-subscriptions": {
@@ -1888,10 +2804,17 @@ export const operations: Manifest = {
         description: "Get a single coupon by id.",
         params: [
           {
-            name: "couponId",
+            name: "code",
             type: "string",
             required: true,
-            description: "Coupon id.",
+            description: "Coupon code",
+          },
+          {
+            name: "id",
+            type: "string",
+            required: true,
+            description:
+              "Coupon id (upstream calls this `id`, not `couponId`).",
           },
         ],
         additionalProperties: true,
@@ -1913,13 +2836,69 @@ export const operations: Manifest = {
       "create-fulfillment": {
         upstream: "create_order_fulfillment",
         description: "Create a fulfillment record for an order.",
-        params: [],
+        params: [
+          {
+            name: "orderId",
+            type: "string",
+            required: true,
+            description: "ID of the order to fulfill",
+          },
+          {
+            name: "trackings",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Fulfillment tracking information",
+          },
+          {
+            name: "items",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Items being fulfilled",
+          },
+          {
+            name: "notifyCustomer",
+            type: "boolean",
+            required: true,
+            description: "Whether to notify the customer",
+          },],
         additionalProperties: true,
       },
       "create-coupon": {
         upstream: "create_coupon",
         description: "Create a new coupon.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Coupon name",
+          },
+          {
+            name: "code",
+            type: "string",
+            required: true,
+            description: "Coupon code",
+          },
+          {
+            name: "discountType",
+            type: "string",
+            required: true,
+            description: "Type of discount",
+          },
+          {
+            name: "discountValue",
+            type: "number",
+            required: true,
+            description: "Discount value",
+          },
+          {
+            name: "startDate",
+            type: "string",
+            required: true,
+            description: "Start date in YYYY-MM-DDTHH:mm:ssZ format",
+          },],
         additionalProperties: true,
       },
       "update-coupon": {
@@ -1927,10 +2906,41 @@ export const operations: Manifest = {
         description: "Update an existing coupon.",
         params: [
           {
-            name: "couponId",
+            name: "name",
             type: "string",
             required: true,
-            description: "Coupon id.",
+            description: "Coupon name",
+          },
+          {
+            name: "code",
+            type: "string",
+            required: true,
+            description: "Coupon code",
+          },
+          {
+            name: "discountType",
+            type: "string",
+            required: true,
+            description: "Type of discount",
+          },
+          {
+            name: "discountValue",
+            type: "number",
+            required: true,
+            description: "Discount value",
+          },
+          {
+            name: "startDate",
+            type: "string",
+            required: true,
+            description: "Start date in YYYY-MM-DDTHH:mm:ssZ format",
+          },
+          {
+            name: "id",
+            type: "string",
+            required: true,
+            description:
+              "Coupon id (upstream calls this `id`, not `couponId`).",
           },
         ],
         additionalProperties: true,
@@ -1940,29 +2950,78 @@ export const operations: Manifest = {
         description: "Delete a coupon by id.",
         params: [
           {
-            name: "couponId",
+            name: "id",
             type: "string",
             required: true,
-            description: "Coupon id.",
+            description:
+              "Coupon id (upstream calls this `id`, not `couponId`).",
           },
         ],
       },
       "create-custom-provider-config": {
         upstream: "create_custom_provider_config",
         description: "Create the custom payment provider config.",
-        params: [],
+        params: [
+          {
+            name: "live",
+            type: "string",
+            required: true,
+            description: "Live payment configuration",
+          },
+          {
+            name: "test",
+            type: "string",
+            required: true,
+            description: "Test payment configuration",
+          },],
         additionalProperties: true,
       },
       "disconnect-custom-provider-config": {
         upstream: "disconnect_custom_provider_config",
         description: "Disconnect the custom payment provider config.",
-        params: [],
+        params: [
+          {
+            name: "liveMode",
+            type: "boolean",
+            required: true,
+            description: "Whether to disconnect live or test mode config",
+          },],
         additionalProperties: true,
       },
       "create-custom-provider-integration": {
         upstream: "create_custom_provider_integration",
         description: "Create a custom payment provider integration.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the custom provider",
+          },
+          {
+            name: "description",
+            type: "string",
+            required: true,
+            description: "Description of the payment gateway",
+          },
+          {
+            name: "paymentsUrl",
+            type: "string",
+            required: true,
+            description: "URL to load in iframe for payment session",
+          },
+          {
+            name: "queryUrl",
+            type: "string",
+            required: true,
+            description: "URL for querying payment events",
+          },
+          {
+            name: "imageUrl",
+            type: "string",
+            required: true,
+            description: "Public image URL for the payment gateway logo",
+          },],
         additionalProperties: true,
       },
       "delete-custom-provider-integration": {
@@ -1974,7 +3033,37 @@ export const operations: Manifest = {
       "create-whitelabel-provider": {
         upstream: "create_whitelabel_integration_provider",
         description: "Create a whitelabel integration provider.",
-        params: [],
+        params: [
+          {
+            name: "uniqueName",
+            type: "string",
+            required: true,
+            description: "A unique name for the integration provider (lowercase, hyphens only)",
+          },
+          {
+            name: "title",
+            type: "string",
+            required: true,
+            description: "The title or name of the integration provider",
+          },
+          {
+            name: "provider",
+            type: "string",
+            required: true,
+            description: "The type of payment provider",
+          },
+          {
+            name: "description",
+            type: "string",
+            required: true,
+            description: "A brief description of the integration provider",
+          },
+          {
+            name: "imageUrl",
+            type: "string",
+            required: true,
+            description: "The URL to an image representing the integration provider",
+          },],
         additionalProperties: true,
       },
     },
@@ -1993,10 +3082,11 @@ export const operations: Manifest = {
         description: "Get a single shipping zone by id.",
         params: [
           {
-            name: "zoneId",
+            name: "shippingZoneId",
             type: "string",
             required: true,
-            description: "Shipping zone id.",
+            description:
+              "Shipping zone id (upstream calls this `shippingZoneId`, not `zoneId`).",
           },
         ],
         additionalProperties: true,
@@ -2004,18 +3094,31 @@ export const operations: Manifest = {
       "list-shipping-rates": {
         upstream: "ghl_list_shipping_rates",
         description: "List shipping rates for a zone.",
-        params: [],
+        params: [
+          {
+            name: "shippingZoneId",
+            type: "string",
+            required: true,
+            description: "ID of the shipping zone",
+          },],
         additionalProperties: true,
       },
       "get-shipping-rate": {
         upstream: "ghl_get_shipping_rate",
-        description: "Get a single shipping rate by id.",
+        description:
+          "Get a single shipping rate by id. Upstream requires BOTH `shippingZoneId` and `shippingRateId` (rates are zone-scoped).",
         params: [
           {
-            name: "rateId",
+            name: "shippingZoneId",
             type: "string",
             required: true,
-            description: "Shipping rate id.",
+            description: "Parent shipping zone id.",
+          },
+          {
+            name: "shippingRateId",
+            type: "string",
+            required: true,
+            description: "Shipping rate id within the zone.",
           },
         ],
         additionalProperties: true,
@@ -2031,10 +3134,11 @@ export const operations: Manifest = {
         description: "Get a single shipping carrier by id.",
         params: [
           {
-            name: "carrierId",
+            name: "shippingCarrierId",
             type: "string",
             required: true,
-            description: "Shipping carrier id.",
+            description:
+              "Shipping carrier id (upstream calls this `shippingCarrierId`, not `carrierId`).",
           },
         ],
         additionalProperties: true,
@@ -2043,7 +3147,38 @@ export const operations: Manifest = {
         upstream: "ghl_get_available_shipping_rates",
         description:
           "Get available shipping rates for an order (matches zone+rate config).",
-        params: [],
+        params: [
+          {
+            name: "country",
+            type: "string",
+            required: true,
+            description: "Destination country code",
+          },
+          {
+            name: "address",
+            type: "string",
+            required: true,
+            description: "Shipping address details",
+          },
+          {
+            name: "totalOrderAmount",
+            type: "number",
+            required: true,
+            description: "Total order amount",
+          },
+          {
+            name: "totalOrderWeight",
+            type: "number",
+            required: true,
+            description: "Total order weight",
+          },
+          {
+            name: "products",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of products in the order",
+          },],
         additionalProperties: true,
       },
       "get-store-setting": {
@@ -2057,7 +3192,20 @@ export const operations: Manifest = {
       "create-shipping-zone": {
         upstream: "ghl_create_shipping_zone",
         description: "Create a new shipping zone.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the shipping zone",
+          },
+          {
+            name: "countries",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of countries with optional state restrictions",
+          },],
         additionalProperties: true,
       },
       "update-shipping-zone": {
@@ -2065,10 +3213,11 @@ export const operations: Manifest = {
         description: "Update an existing shipping zone.",
         params: [
           {
-            name: "zoneId",
+            name: "shippingZoneId",
             type: "string",
             required: true,
-            description: "Shipping zone id.",
+            description:
+              "Shipping zone id (upstream calls this `shippingZoneId`, not `zoneId`).",
           },
         ],
         additionalProperties: true,
@@ -2078,48 +3227,112 @@ export const operations: Manifest = {
         description: "Delete a shipping zone by id.",
         params: [
           {
-            name: "zoneId",
+            name: "shippingZoneId",
             type: "string",
             required: true,
-            description: "Shipping zone id.",
+            description:
+              "Shipping zone id (upstream calls this `shippingZoneId`, not `zoneId`).",
           },
         ],
       },
       "create-shipping-rate": {
         upstream: "ghl_create_shipping_rate",
         description: "Create a new shipping rate (within a zone).",
-        params: [],
+        params: [
+          {
+            name: "shippingZoneId",
+            type: "string",
+            required: true,
+            description: "ID of the shipping zone",
+          },
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the shipping rate",
+          },
+          {
+            name: "currency",
+            type: "string",
+            required: true,
+            description: "Currency code (e.g., USD)",
+          },
+          {
+            name: "amount",
+            type: "number",
+            required: true,
+            description: "Shipping rate amount",
+          },
+          {
+            name: "conditionType",
+            type: "string",
+            required: true,
+            description: "Condition type for rate calculation",
+          },],
         additionalProperties: true,
       },
       "update-shipping-rate": {
         upstream: "ghl_update_shipping_rate",
-        description: "Update an existing shipping rate.",
+        description:
+          "Update an existing shipping rate. Requires BOTH `shippingZoneId` and `shippingRateId`.",
         params: [
           {
-            name: "rateId",
+            name: "shippingZoneId",
             type: "string",
             required: true,
-            description: "Shipping rate id.",
+            description: "Parent shipping zone id.",
+          },
+          {
+            name: "shippingRateId",
+            type: "string",
+            required: true,
+            description: "Shipping rate id within the zone.",
           },
         ],
         additionalProperties: true,
       },
       "delete-shipping-rate": {
         upstream: "ghl_delete_shipping_rate",
-        description: "Delete a shipping rate by id.",
+        description:
+          "Delete a shipping rate by id. Requires BOTH `shippingZoneId` and `shippingRateId`.",
         params: [
           {
-            name: "rateId",
+            name: "shippingZoneId",
             type: "string",
             required: true,
-            description: "Shipping rate id.",
+            description: "Parent shipping zone id.",
+          },
+          {
+            name: "shippingRateId",
+            type: "string",
+            required: true,
+            description: "Shipping rate id within the zone.",
           },
         ],
       },
       "create-shipping-carrier": {
         upstream: "ghl_create_shipping_carrier",
         description: "Create a new shipping carrier.",
-        params: [],
+        params: [
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the shipping carrier",
+          },
+          {
+            name: "callbackUrl",
+            type: "string",
+            required: true,
+            description: "Callback URL for carrier rate requests",
+          },
+          {
+            name: "services",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of available services",
+          },],
         additionalProperties: true,
       },
       "update-shipping-carrier": {
@@ -2127,10 +3340,11 @@ export const operations: Manifest = {
         description: "Update an existing shipping carrier.",
         params: [
           {
-            name: "carrierId",
+            name: "shippingCarrierId",
             type: "string",
             required: true,
-            description: "Shipping carrier id.",
+            description:
+              "Shipping carrier id (upstream calls this `shippingCarrierId`, not `carrierId`).",
           },
         ],
         additionalProperties: true,
@@ -2140,17 +3354,24 @@ export const operations: Manifest = {
         description: "Delete a shipping carrier by id.",
         params: [
           {
-            name: "carrierId",
+            name: "shippingCarrierId",
             type: "string",
             required: true,
-            description: "Shipping carrier id.",
+            description:
+              "Shipping carrier id (upstream calls this `shippingCarrierId`, not `carrierId`).",
           },
         ],
       },
       "create-store-setting": {
         upstream: "ghl_create_store_setting",
         description: "Create the store-level settings record.",
-        params: [],
+        params: [
+          {
+            name: "shippingOrigin",
+            type: "string",
+            required: true,
+            description: "Shipping origin address details",
+          },],
         additionalProperties: true,
       },
     },
@@ -2167,8 +3388,43 @@ export const operations: Manifest = {
       },
       "get-posts": {
         upstream: "get_blog_posts",
-        description: "List blog posts in a site.",
-        params: [],
+        description:
+          'List blog posts in a site. Defaults to PUBLISHED only — pass `status: "DRAFT" | "SCHEDULED" | "ARCHIVED"` to filter to a different state, or call multiple times to aggregate. GHL returns 0 results when status is omitted; the router defaults to PUBLISHED.',
+        params: [
+          {
+            name: "blogId",
+            type: "string",
+            required: true,
+            description:
+              "Blog site id (use `get-sites` to enumerate available sites).",
+          },
+          {
+            name: "status",
+            type: "string",
+            required: false,
+            default: "PUBLISHED",
+            description:
+              'One of "DRAFT", "PUBLISHED", "SCHEDULED", "ARCHIVED". Router defaults to "PUBLISHED" when omitted because GHL returns zero results otherwise.',
+          },
+          {
+            name: "limit",
+            type: "number",
+            required: false,
+            description: "Page size (upstream defaults to 10).",
+          },
+          {
+            name: "offset",
+            type: "number",
+            required: false,
+            description: "Pagination offset (upstream defaults to 0).",
+          },
+          {
+            name: "searchTerm",
+            type: "string",
+            required: false,
+            description: "Optional title/content search.",
+          },
+        ],
         additionalProperties: true,
       },
       "get-authors": {
@@ -2186,7 +3442,13 @@ export const operations: Manifest = {
       "check-url-slug": {
         upstream: "check_url_slug",
         description: "Check whether a URL slug is available for a blog post.",
-        params: [],
+        params: [
+          {
+            name: "urlSlug",
+            type: "string",
+            required: true,
+            description: "URL slug to check for availability",
+          },],
         additionalProperties: true,
       },
     },
@@ -2194,13 +3456,74 @@ export const operations: Manifest = {
       "create-post": {
         upstream: "create_blog_post",
         description: "Create a new blog post.",
-        params: [],
+        params: [
+          {
+            name: "title",
+            type: "string",
+            required: true,
+            description: "Blog post title",
+          },
+          {
+            name: "blogId",
+            type: "string",
+            required: true,
+            description: "Blog site ID (use get_blog_sites to find available blogs)",
+          },
+          {
+            name: "content",
+            type: "string",
+            required: true,
+            description: "Full HTML content of the blog post",
+          },
+          {
+            name: "description",
+            type: "string",
+            required: true,
+            description: "Short description/excerpt of the blog post",
+          },
+          {
+            name: "imageUrl",
+            type: "string",
+            required: true,
+            description: "URL of the featured image for the blog post",
+          },
+          {
+            name: "imageAltText",
+            type: "string",
+            required: true,
+            description: "Alt text for the featured image (for SEO and accessibility)",
+          },
+          {
+            name: "urlSlug",
+            type: "string",
+            required: true,
+            description: "URL slug for the blog post (use check_url_slug to verify availability)",
+          },
+          {
+            name: "author",
+            type: "string",
+            required: true,
+            description: "Author ID (use get_blog_authors to find available authors)",
+          },
+          {
+            name: "categories",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description: "Array of category IDs (use get_blog_categories to find available categories)",
+          },],
         additionalProperties: true,
       },
       "update-post": {
         upstream: "update_blog_post",
         description: "Update an existing blog post.",
         params: [
+          {
+            name: "blogId",
+            type: "string",
+            required: true,
+            description: "Blog site ID that contains the post",
+          },
           {
             name: "postId",
             type: "string",
@@ -2234,10 +3557,11 @@ export const operations: Manifest = {
         description: "Delete a media file from the library.",
         params: [
           {
-            name: "fileId",
+            name: "id",
             type: "string",
             required: true,
-            description: "Media file id.",
+            description:
+              "Media file id (upstream calls this `id`, not `fileId`).",
           },
         ],
         additionalProperties: true,
@@ -2253,10 +3577,11 @@ export const operations: Manifest = {
         description: "Get a custom field definition by id.",
         params: [
           {
-            name: "fieldId",
+            name: "id",
             type: "string",
             required: true,
-            description: "Custom field id.",
+            description:
+              "Custom field id (upstream calls this `id`, not `fieldId`).",
           },
         ],
         additionalProperties: true,
@@ -2280,7 +3605,31 @@ export const operations: Manifest = {
       "create-field": {
         upstream: "ghl_create_custom_field",
         description: "Create a new custom field.",
-        params: [],
+        params: [
+          {
+            name: "dataType",
+            type: "string",
+            required: true,
+            description: "Type of field to create",
+          },
+          {
+            name: "fieldKey",
+            type: "string",
+            required: true,
+            description: "Field key. Format: \"custom_object.{objectKey}.{fieldKey}\" for custom objects. Example: \"custom_object.pet.name\"",
+          },
+          {
+            name: "objectKey",
+            type: "string",
+            required: true,
+            description: "The object key. Format: \"custom_object.{objectKey}\" for custom objects. Example: \"custom_object.pet\"",
+          },
+          {
+            name: "parentId",
+            type: "string",
+            required: true,
+            description: "ID of the parent folder for organization",
+          },],
         additionalProperties: true,
       },
       "update-field": {
@@ -2288,10 +3637,11 @@ export const operations: Manifest = {
         description: "Update an existing custom field.",
         params: [
           {
-            name: "fieldId",
+            name: "id",
             type: "string",
             required: true,
-            description: "Custom field id.",
+            description:
+              "Custom field id (upstream calls this `id`, not `fieldId`).",
           },
         ],
         additionalProperties: true,
@@ -2301,17 +3651,30 @@ export const operations: Manifest = {
         description: "Delete a custom field by id.",
         params: [
           {
-            name: "fieldId",
+            name: "id",
             type: "string",
             required: true,
-            description: "Custom field id.",
+            description:
+              "Custom field id (upstream calls this `id`, not `fieldId`).",
           },
         ],
       },
       "create-folder": {
         upstream: "ghl_create_custom_field_folder",
         description: "Create a custom field folder.",
-        params: [],
+        params: [
+          {
+            name: "objectKey",
+            type: "string",
+            required: true,
+            description: "Object key for the folder. Format: \"custom_object.{objectKey}\" for custom objects. Example: \"custom_object.pet\"",
+          },
+          {
+            name: "name",
+            type: "string",
+            required: true,
+            description: "Name of the folder",
+          },],
         additionalProperties: true,
       },
       "update-folder": {
@@ -2319,10 +3682,17 @@ export const operations: Manifest = {
         description: "Update an existing custom field folder.",
         params: [
           {
-            name: "folderId",
+            name: "name",
             type: "string",
             required: true,
-            description: "Custom field folder id.",
+            description: "New name for the folder",
+          },
+          {
+            name: "id",
+            type: "string",
+            required: true,
+            description:
+              "Custom field folder id (upstream calls this `id`, not `folderId`).",
           },
         ],
         additionalProperties: true,
@@ -2332,10 +3702,11 @@ export const operations: Manifest = {
         description: "Delete a custom field folder by id.",
         params: [
           {
-            name: "folderId",
+            name: "id",
             type: "string",
             required: true,
-            description: "Custom field folder id.",
+            description:
+              "Custom field folder id (upstream calls this `id`, not `folderId`).",
           },
         ],
       },
@@ -2351,13 +3722,22 @@ export const operations: Manifest = {
       },
       "get-schema": {
         upstream: "get_object_schema",
-        description: "Get a single custom object schema by id.",
+        description:
+          'Get a single object schema by KEY (not id). Use the `key` from `list` results — e.g. "custom_objects.webinars" for custom objects, or "contact" / "opportunity" / "business" for system objects.',
         params: [
           {
-            name: "schemaId",
+            name: "key",
             type: "string",
             required: true,
-            description: "Custom object schema id.",
+            description:
+              'Object key (e.g. "custom_objects.webinars" or "contact").',
+          },
+          {
+            name: "fetchProperties",
+            type: "boolean",
+            required: false,
+            default: true,
+            description: "Include all field/property definitions in response.",
           },
         ],
         additionalProperties: true,
@@ -2366,6 +3746,12 @@ export const operations: Manifest = {
         upstream: "get_object_record",
         description: "Get a single custom object record by id.",
         params: [
+          {
+            name: "schemaKey",
+            type: "string",
+            required: true,
+            description: "Schema key of the object",
+          },
           {
             name: "recordId",
             type: "string",
@@ -2378,7 +3764,19 @@ export const operations: Manifest = {
       "search-records": {
         upstream: "search_object_records",
         description: "Search custom object records with optional filters.",
-        params: [],
+        params: [
+          {
+            name: "schemaKey",
+            type: "string",
+            required: true,
+            description: "Schema key of the object to search in",
+          },
+          {
+            name: "query",
+            type: "string",
+            required: true,
+            description: "Search query using searchable properties (e.g., \"name:Buddy\" to search for records with name Buddy)",
+          },],
         additionalProperties: true,
       },
     },
@@ -2386,18 +3784,46 @@ export const operations: Manifest = {
       "create-schema": {
         upstream: "create_object_schema",
         description: "Create a new custom object schema.",
-        params: [],
+        params: [
+          {
+            name: "labels",
+            type: "string",
+            required: true,
+            description: "Singular and plural names for the custom object",
+          },
+          {
+            name: "key",
+            type: "string",
+            required: true,
+            description: "Unique key for the object (e.g., \"custom_objects.pet\"). The \"custom_objects.\" prefix is added automatically if not included",
+          },
+          {
+            name: "primaryDisplayPropertyDetails",
+            type: "string",
+            required: true,
+            description: "Primary property configuration for display",
+          },],
         additionalProperties: true,
       },
       "update-schema": {
         upstream: "update_object_schema",
-        description: "Update an existing custom object schema.",
+        description:
+          "Update an existing object schema. Identified by `key` (NOT `schemaId`); upstream additionally requires `searchableProperties` (string[] of property names to make searchable).",
         params: [
           {
-            name: "schemaId",
+            name: "key",
             type: "string",
             required: true,
-            description: "Custom object schema id.",
+            description:
+              'Object key — e.g. "custom_objects.webinars" (upstream uses `key`, not `schemaId`).',
+          },
+          {
+            name: "searchableProperties",
+            type: "array",
+            items: { type: "string" },
+            required: true,
+            description:
+              "Array of property keys to make searchable on this schema (required by upstream).",
           },
         ],
         additionalProperties: true,
@@ -2405,13 +3831,31 @@ export const operations: Manifest = {
       "create-record": {
         upstream: "create_object_record",
         description: "Create a new custom object record.",
-        params: [],
+        params: [
+          {
+            name: "schemaKey",
+            type: "string",
+            required: true,
+            description: "Schema key of the object (e.g., \"custom_objects.pet\", \"business\")",
+          },
+          {
+            name: "properties",
+            type: "string",
+            required: true,
+            description: "Record properties as key-value pairs (e.g., {\"name\": \"Buddy\", \"breed\": \"Golden Retriever\"})",
+          },],
         additionalProperties: true,
       },
       "update-record": {
         upstream: "update_object_record",
         description: "Update an existing custom object record.",
         params: [
+          {
+            name: "schemaKey",
+            type: "string",
+            required: true,
+            description: "Schema key of the object",
+          },
           {
             name: "recordId",
             type: "string",
@@ -2425,6 +3869,12 @@ export const operations: Manifest = {
         upstream: "delete_object_record",
         description: "Delete a custom object record by id.",
         params: [
+          {
+            name: "schemaKey",
+            type: "string",
+            required: true,
+            description: "Schema key of the object",
+          },
           {
             name: "recordId",
             type: "string",
@@ -2460,13 +3910,14 @@ export const operations: Manifest = {
       },
       "get-by-key": {
         upstream: "ghl_get_association_by_key",
-        description: "Get an association by its key.",
+        description: "Get an association by its key name.",
         params: [
           {
-            name: "key",
+            name: "keyName",
             type: "string",
             required: true,
-            description: "Association key.",
+            description:
+              "Association key name (upstream calls this `keyName`, not `key`).",
           },
         ],
         additionalProperties: true,
@@ -2504,13 +3955,55 @@ export const operations: Manifest = {
       "create-association": {
         upstream: "ghl_create_association",
         description: "Create a new association definition.",
-        params: [],
+        params: [
+          {
+            name: "key",
+            type: "string",
+            required: true,
+            description: "Unique key for the association (e.g., \"student_teacher\")",
+          },
+          {
+            name: "firstObjectLabel",
+            type: "string",
+            required: true,
+            description: "Label for the first object in the association (e.g., \"student\")",
+          },
+          {
+            name: "firstObjectKey",
+            type: "string",
+            required: true,
+            description: "Key for the first object (e.g., \"custom_objects.children\")",
+          },
+          {
+            name: "secondObjectLabel",
+            type: "string",
+            required: true,
+            description: "Label for the second object in the association (e.g., \"teacher\")",
+          },
+          {
+            name: "secondObjectKey",
+            type: "string",
+            required: true,
+            description: "Key for the second object (e.g., \"contact\")",
+          },],
         additionalProperties: true,
       },
       "update-association": {
         upstream: "ghl_update_association",
         description: "Update an existing association definition.",
         params: [
+          {
+            name: "firstObjectLabel",
+            type: "string",
+            required: true,
+            description: "New label for the first object in the association",
+          },
+          {
+            name: "secondObjectLabel",
+            type: "string",
+            required: true,
+            description: "New label for the second object in the association",
+          },
           {
             name: "associationId",
             type: "string",
@@ -2536,7 +4029,25 @@ export const operations: Manifest = {
         upstream: "ghl_create_relation",
         description:
           "Create a relation (record-to-record link via an association).",
-        params: [],
+        params: [
+          {
+            name: "associationId",
+            type: "string",
+            required: true,
+            description: "The ID of the association to use for this relation",
+          },
+          {
+            name: "firstRecordId",
+            type: "string",
+            required: true,
+            description: "ID of the first record (e.g., contact ID if contact is first object in association)",
+          },
+          {
+            name: "secondRecordId",
+            type: "string",
+            required: true,
+            description: "ID of the second record (e.g., custom object record ID if custom object is second object)",
+          },],
         additionalProperties: true,
       },
       "delete-relation": {

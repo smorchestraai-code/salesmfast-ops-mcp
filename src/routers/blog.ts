@@ -34,6 +34,21 @@ export function createBlogReader(
     category: "blog",
     ops: operations.blog.reader,
     deniedOps,
+    // ajv `useDefaults` is ignored inside `oneOf` branches, so the
+    // manifest-level `default: "PUBLISHED"` on `get-posts.status` does NOT
+    // auto-inject. Apply it here instead. GHL silently returns zero results
+    // when no status filter is passed; PUBLISHED matches operator intent
+    // ("show me my live posts") — callers can override.
+    preValidate: (operation, params) => {
+      if (
+        operation === "get-posts" &&
+        (params["status"] === undefined ||
+          params["status"] === null ||
+          params["status"] === "")
+      ) {
+        params["status"] = "PUBLISHED";
+      }
+    },
     dispatch: (op, params) => upstream.blogTools.executeTool(op, params),
   });
 }
