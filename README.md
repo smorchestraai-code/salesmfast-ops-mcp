@@ -18,7 +18,7 @@ See [`BRD.md`](./BRD.md) for the original requirements and [`CLAUDE.md`](./CLAUD
 ```bash
 git clone https://github.com/smorchestraai-code/salesmfast-ops-mcp.git
 cd salesmfast-ops-mcp
-bash install.sh                                  # pins to v1.1.2 by default
+bash install.sh                                  # pins to v1.1.4 by default
 # → clones upstream, builds, prompts for PIT + locationId, writes .env, runs probe, merges Claude Desktop config
 ```
 Override the version with `SALESMFAST_OPS_VERSION=main bash install.sh` for HEAD.
@@ -27,7 +27,7 @@ Override the version with `SALESMFAST_OPS_VERSION=main bash install.sh` for HEAD
 ```bash
 git clone <repo> salesmfast-ops-mcp
 cd salesmfast-ops-mcp
-git checkout v1.1.2-bridge-gaps                  # or `main` for HEAD
+git checkout v1.1.4                              # or `main` for HEAD
 npm install
 cp .env.example .env
 # edit .env and fill in GHL_API_KEY + GHL_LOCATION_ID

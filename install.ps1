@@ -7,7 +7,7 @@
 # What it does (idempotent — re-running is safe):
 #   1. Pre-flight: install Node.js 20+ and Git via winget if missing
 #   2. Clone (or update) the facade repo to %USERPROFILE%\salesmfast-ops-mcp
-#   3. Pin to the requested version tag (default v1.1.3-search-bypass)
+#   3. Pin to the requested version tag (default v1.1.4)
 #   4. Clone (or update) upstream GoHighLevel-MCP next to it
 #   5. Build upstream
 #   6. Patch facade package.json to point at the local upstream
@@ -53,7 +53,7 @@ function Invoke-Git {
 # ─── Config ─────────────────────────────────────────────────────────────────
 $FacadeRepo  = "https://github.com/smorchestraai-code/salesmfast-ops-mcp.git"
 $UpstreamRepo = "https://github.com/mastanley13/GoHighLevel-MCP.git"
-$Version = if ($env:SALESMFAST_OPS_VERSION) { $env:SALESMFAST_OPS_VERSION } else { "v1.1.3-search-bypass" }
+$Version = if ($env:SALESMFAST_OPS_VERSION) { $env:SALESMFAST_OPS_VERSION } else { "v1.1.4" }
 $InstallDir = if ($env:INSTALL_DIR) { $env:INSTALL_DIR } else { Join-Path $HOME "salesmfast-ops-mcp" }
 $UpstreamDir = Join-Path (Split-Path $InstallDir -Parent) "GoHighLevel-MCP"
 
