@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: Build + lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The `ghl-mcp-upstream` dependency is a `file:` link to a path that only
+      # exists on the maintainer's machine (see CLAUDE.md architecture log,
+      # 2026-04-26); the installers rewrite it per-machine at step 5. CI cannot
+      # resolve it, and does not need to: every upstream import is covered by
+      # the ambient declarations in `src/ambient.d.ts`, so `tsc` never reads
+      # real upstream types. Verified identical exit codes and identical
+      # diagnostics with and without the upstream package linked, so stripping
+      # the dep here is faithful to a local run — not a weakened check.
+      - name: Unlink machine-local upstream dep
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            delete p.dependencies['ghl-mcp-upstream'];
+            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+          rm -f package-lock.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build (tsc)
+        run: npx tsc
+
+      - name: Lint (tsc, scripts + src)
+        run: npx tsc -p tsconfig.scripts.json
+
+      - name: Shell syntax check (install.sh)
+        run: bash -n install.sh
+
+      - name: PowerShell syntax check (install.ps1)
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            "$PWD/install.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }
+          Write-Host "install.ps1 parses clean"

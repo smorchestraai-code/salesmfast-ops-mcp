@@ -128,7 +128,7 @@ function indexUpstream(): Map<string, UpstreamSchema> {
       const t = def as {
         name?: string;
         inputSchema?: {
-          properties?: Record<string, unknown>;
+          properties?: UpstreamSchema["properties"];
           required?: string[];
         };
       };
@@ -194,8 +194,7 @@ function audit(): Finding[] {
           if (UPSTREAM_ALWAYS_PROVIDES.has(req)) continue;
           if (AUTO_INJECTED_BY_ROUTER.has(req)) continue;
           const propSpec = u.properties[req] as
-            | { default?: unknown }
-            | undefined;
+            { default?: unknown } | undefined;
           if (propSpec && propSpec.default !== undefined) continue;
           findings.push({
             severity: "BUG-B",

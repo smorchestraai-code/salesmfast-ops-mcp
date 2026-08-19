@@ -152,6 +152,14 @@ fi
 step "5/9 Install + build facade"
 
 if [[ ! -d node_modules ]] || [[ "$CURRENT_DEP" != "$DESIRED_DEP" ]]; then
+  # Same reason as install.ps1 step 6 (PR #19): step 1's checkout restores the
+  # committed package-lock.json, which pins ghl-mcp-upstream to the author's
+  # machine path. npm trusts the lockfile over the package.json we just
+  # patched and aborts with EMISSINGTARGET. Drop it so npm regenerates.
+  if [[ -f package-lock.json ]]; then
+    log "Removing stale package-lock.json (upstream path doesn't match this layout)"
+    rm -f package-lock.json
+  fi
   log "Running npm install (re-links the local upstream)"
   npm install --silent
 fi
