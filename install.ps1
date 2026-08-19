@@ -195,6 +195,10 @@ Write-Ok "package.json points at $UpstreamDir"
 Write-Step "6/9  Install + build facade"
 
 if (-not (Test-Path "node_modules") -or $currentDep -ne $desiredDep) {
+  if (Test-Path "package-lock.json") {
+    Write-Log "Removing stale package-lock.json (relative upstream path doesn't match this layout)"
+    Remove-Item "package-lock.json" -Force
+  }
   Write-Log "Running npm install (re-links the local upstream)"
   & npm install --silent
   if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "Facade npm install failed" }
