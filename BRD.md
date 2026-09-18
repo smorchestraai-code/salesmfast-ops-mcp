@@ -649,7 +649,7 @@ Append to `~/Library/Application Support/Claude/claude_desktop_config.json`:
     "/Users/mamounalamouri/Desktop/cowork-workspace/CodingProjects/salesmfast-ops-mcp/dist/server.js"
   ],
   "env": {
-    "GHL_API_KEY": "pit-524c6c6b-526d-4f59-be5e-c336cd7d49fd",
+    "GHL_API_KEY": "${GHL_API_KEY}",
     "GHL_LOCATION_ID": "UNw9DraGO3eyEa5l4lkJ",
     "GHL_BASE_URL": "https://services.leadconnectorhq.com",
     "GHL_TOOL_CATEGORIES": "all",
@@ -672,8 +672,11 @@ Comment out (or remove) the existing `ghl-mcp` block so the host loads only the 
 - **Slim-mode patch precedent**: see the `GHL_TOOL_CATEGORIES` and `GHL_TOOL_DENY` block already added to `src/server.ts` (lines starting with `// -------- SLIM-MODE FILTERS --------`). Same env-var contract carried forward.
 
 ### 10.2 Working credentials (development PIT, this is dev-only)
+
+> The real key is never written in this document. A key previously committed here was redacted on 2026-09-18 and must be rotated in GHL.
+
 ```
-GHL_API_KEY=pit-524c6c6b-526d-4f59-be5e-c336cd7d49fd
+GHL_API_KEY=<load from ~/.smorch-secrets or the MCP config env; never commit a real key>
 GHL_LOCATION_ID=UNw9DraGO3eyEa5l4lkJ
 GHL_BASE_URL=https://services.leadconnectorhq.com
 ```
