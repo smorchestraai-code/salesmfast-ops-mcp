@@ -457,14 +457,14 @@ mcp__salesmfast-ops__ghl-social-updater({
 
 #### survey
 **Routers:** `ghl-survey-reader` (2 ops, **no updater** — read-only category)
-**What it controls:** surveys (only — GHL forms are NOT exposed by upstream, despite the original survey description claim).
+**What it controls:** surveys. GHL forms have their own router since v1.1.4: `ghl-forms-reader` (`list-forms`, `list-submissions`). On builds before 1.1.4 forms are not exposed at all, which is why an OS on an old install reports UTM capture as NOT REGISTERED; see the version section at the end of this guide.
 
 | Operation | Op | Params |
 |---|---|---|
 | List surveys | `list` | optional `skip`, `limit`, `type` |
 | List submissions | `list-submissions` | optional `surveyId`, `q`, `startAt`, `endAt`, `page`, `limit`. v1.1.3 fix — uses correct `/surveys/submissions` URL (upstream wrapper hits a 404) |
 
-**Use case:** survey submissions can enrich CRM contacts with response data. v1.1.3 routes `list-submissions` directly via axios because upstream's `ghl-api-client.getSurveySubmissions` builds the wrong endpoint URL. **Note:** GHL forms are not surfaced here — there's no upstream Forms tool class. If you need form submissions, use the GHL UI or extend the upstream.
+**Use case:** survey submissions can enrich CRM contacts with response data. v1.1.3 routes `list-submissions` directly via axios because upstream's `ghl-api-client.getSurveySubmissions` builds the wrong endpoint URL. **Note:** for form submissions use `ghl-forms-reader` (v1.1.4+). The upstream has no Forms tool class; the facade routes these two endpoints directly.
 
 ---
 
@@ -756,3 +756,31 @@ Yes — `scripts/probe.ts` has a `CATEGORY_PROBES` array. Add a new entry with y
 - Build / probe scripts reference: [`README.md`](./README.md)
 - Decision log + lessons captured during build: [`CLAUDE.md`](./CLAUDE.md), [`.claude/lessons.md`](./.claude/lessons.md)
 - Status + ship gates: [`STATUS.md`](./STATUS.md)
+
+---
+
+## Which version am I on, and how do I upgrade
+
+Ask the running server: `ghl-toolkit-help { operation: "list-categories" }`. If `forms` is in the list you are on
+1.1.4 or later. If it is missing, or if `ghl-social-reader` per-platform calls come back empty against
+accounts you can see in the UI, you are on an older build.
+
+Upgrade (client machine):
+```bash
+cd ~/salesmfast-ops-mcp && git pull && SALESMFAST_OPS_VERSION=v1.1.4 bash install.sh
+```
+Restart Claude Desktop afterwards and confirm 36 tools in the connector list.
+
+## What a well-formed empty means
+
+Three readers can return a clean empty result against data that exists in the UI:
+- `ghl-social-reader` per-platform account calls resolve through a single upstream `get_platform_accounts`
+  path whose per-platform client methods are partially unimplemented upstream (see the reader description
+  for the exact list).
+- `ghl-workflow-reader` lists workflows but nothing exposes per-email statistics inside a workflow; the
+  GHL public API has no such endpoint.
+- Any reader on an install older than the router it needs (forms before 1.1.4).
+
+An operating system reading through this facade must treat those empties as UNAVAILABLE (cannot see),
+never as EMPTY-VERIFIED (nothing there). The owner of that gap is the facade/upstream, not the OS and not
+the account.

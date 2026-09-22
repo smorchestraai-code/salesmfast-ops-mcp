@@ -17,6 +17,9 @@ import type { RouterDef } from "./types.js";
 const WORKFLOW_READER_DESCRIPTION =
   "Read-only access to GoHighLevel workflows. " +
   "Operations: `list`. " +
+  "NOT EXPOSED by the GHL public API and therefore by this router: per-email statistics inside a workflow " +
+  "(sent/opened/clicked per action). A caller needing those must treat them as UNAVAILABLE(no-endpoint) " +
+  "or read them from the GHL UI. " +
   "Idempotent and side-effect-free; safe to auto-approve. " +
   'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
   'params: { router: "ghl-workflow-reader", operation: "<name>" } }` for the full schema.';
