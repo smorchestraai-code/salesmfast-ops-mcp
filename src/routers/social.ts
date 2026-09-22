@@ -19,6 +19,11 @@ const SOCIAL_READER_DESCRIPTION =
   "`get-categories`, `get-category`, `get-google-locations`, `get-facebook-pages`, `get-instagram-accounts`, " +
   "`get-linkedin-accounts`, `get-twitter-profile`, `get-tiktok-profile`. " +
   "All operations are idempotent and side-effect-free; safe to auto-approve. " +
+  "UPSTREAM STUBS (v1.1.4, verified against ghl-api-client.ts): `get-tags`, `get-tags-by-ids`, `get-categories`, " +
+  "`get-category`, `get-google-locations`, `get-facebook-pages`, `get-instagram-accounts`, `get-linkedin-accounts`, " +
+  "`get-twitter-profile`, `get-tiktok-profile` reach client methods that throw 'Method not yet implemented'. " +
+  "Only `get-accounts`, `get-post`, `search-posts` hit the live API. A caller must treat a stub result as " +
+  "UNAVAILABLE(stub), never as 'no accounts connected'. " +
   'If the desired operation is unclear, call `ghl-toolkit-help { operation: "describe-operation", ' +
   'params: { router: "ghl-social-reader", operation: "<name>" } }` for the full schema.';
 
